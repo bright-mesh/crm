@@ -444,6 +444,54 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   .landing-cta h2{font-size:1.6rem;}
 }
 @media (max-width:700px){body{padding:1rem 0.8rem;}.app-header h1{font-size:1.4rem;}.toolbar{gap:0.5rem;}.btn{padding:0.5rem 1rem;font-size:0.75rem;}.tab-btn{padding:0.5rem 0.9rem;font-size:0.75rem;}.modal-body{padding:1rem;}}
+
+/* ===== Header & menu redesign (visual only: no markup logic or scripts touched) ===== */
+.app-header{position:relative;gap:1rem;background:#fff;padding:1.15rem 1.5rem;border-radius:22px;border:1px solid #e3ebf3;box-shadow:0 10px 30px rgba(11,43,68,.06);overflow:hidden;margin-bottom:1.1rem;}
+.app-header::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:linear-gradient(90deg,#0b2b44,#1d7a4b 55%,#4ade80);}
+.app-header h1{font-size:1.55rem;letter-spacing:-.3px;gap:.8rem;}
+.app-header h1>i{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#0b2b44,#1d7a4b);color:#fff !important;font-size:1.15rem;box-shadow:0 6px 14px rgba(29,122,75,.28);}
+#locationTitle,#adminTitle{font-size:.82rem !important;font-weight:600 !important;color:#1d6b4f !important;background:#e9f5ef;border:1px solid #cfe6da;padding:.25rem .75rem;border-radius:30px;margin-left:.2rem !important;letter-spacing:0;}
+#locationTitle:empty{display:none;}
+.app-header .sub{gap:.45rem;margin-top:.6rem;}
+.app-header .sub span{display:inline-flex;align-items:center;font-size:.74rem;font-weight:500;color:#5f7385;background:#f4f7fc;padding:.28rem .7rem;border-radius:30px;}
+.app-header .sub i{margin-right:.4rem;font-size:.72rem;}
+.user-badge{display:inline-flex;align-items:center;gap:.5rem;background:#f4f7fc;border:1px solid #e3ebf3;color:#0b2b44;padding:.3rem .4rem .3rem .8rem;border-radius:30px;font-size:.8rem;font-weight:600;}
+.user-badge>i{color:#1d7a4b;font-size:1.05rem;}
+.user-badge .role{background:linear-gradient(135deg,#1d7a4b,#16633c);color:#fff;padding:.22rem .65rem;border-radius:30px;font-size:.62rem;letter-spacing:.6px;text-transform:uppercase;font-weight:700;}
+.save-indicator{gap:.5rem;border:1px solid rgba(0,0,0,.05);padding:.38rem .9rem;}
+.save-indicator i{display:none;}
+.save-indicator::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px rgba(29,122,75,.15);}
+.save-indicator.saving::before{animation:bmPulse 1s infinite;}
+@keyframes bmPulse{50%{opacity:.3;}}
+.app-header .toolbar{gap:.45rem;}
+.app-header .toolbar .btn{padding:.5rem .95rem;font-size:.78rem;border-radius:12px;box-shadow:none;border:1px solid #dce5ed;background:#fff;color:#1e2a3a;}
+.app-header .toolbar .btn i{font-size:.8rem;}
+.app-header .toolbar .btn:hover{background:#f4f7fc;border-color:#c5d3e0;transform:translateY(-1px);}
+.app-header .toolbar .btn-excel{background:#e9f5ef;color:#1d6b4f;border-color:#cfe6da;}
+.app-header .toolbar .btn-excel:hover{background:#d9efe4;}
+.app-header .toolbar .btn-pdf{background:#fdeeee;color:#b0302a;border-color:#f3cfcc;}
+.app-header .toolbar .btn-pdf:hover{background:#fadcda;}
+.app-header .toolbar .btn-logout{background:#fff;color:#b33a3a;border-color:#f0c8c8;}
+.app-header .toolbar .btn-logout:hover{background:#fef5f5;}
+.tab-nav{position:sticky;top:.6rem;z-index:40;flex-wrap:nowrap;overflow-x:auto;gap:.3rem;padding:.4rem;border-radius:18px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid #e3ebf3;box-shadow:0 8px 24px rgba(11,43,68,.07);scrollbar-width:none;margin-bottom:1.5rem;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-btn{flex:0 0 auto;white-space:nowrap;padding:.62rem 1rem;border-radius:13px;font-size:.82rem;gap:.5rem;transition:background .18s,color .18s,box-shadow .18s;}
+.tab-btn i{font-size:.85rem;color:#8aa0b4;width:1.05em;text-align:center;transition:color .18s;}
+.tab-btn:hover{background:#eef5f1;color:#0b2b44;}
+.tab-btn:hover i{color:#1d7a4b;}
+.tab-btn.active{background:linear-gradient(135deg,#1d7a4b,#16633c);color:#fff;box-shadow:0 6px 14px rgba(29,122,75,.3);}
+.tab-btn.active i{color:#d5f5e3;}
+.tab-btn:focus-visible{outline:2px solid #1d7a4b;outline-offset:2px;}
+@media (max-width:700px){
+  .app-header{padding:1rem;border-radius:18px;}
+  .app-header h1{font-size:1.3rem;}
+  .app-header h1>i{width:38px;height:38px;font-size:1rem;}
+  .app-header>div:last-child{align-items:stretch !important;width:100%;}
+  .app-header .toolbar{width:100%;}
+  .app-header .toolbar .btn{flex:1;justify-content:center;padding:.5rem .6rem;}
+  .tab-nav{top:.3rem;}
+  .tab-btn{padding:.55rem .85rem;font-size:.78rem;}
+}
 </style>
 </head>
 <body>
@@ -582,7 +630,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       <h1><i class="fas fa-cubes"></i> Bright Mesh <span id="locationTitle" style="font-size:1rem;color:#5f7385;font-weight:500;margin-left:0.5rem;"></span></h1>
       <div class="sub">
         <span><i class="fas fa-cash-register"></i> Daily closure per shift</span>
-        <span><i class="fas fa-shield-halved"></i> Reconciliation &amp; red-flag audit</span>
+        <span><i class="fas fa-shield-alt"></i> Reconciliation &amp; red-flag audit</span>
         <span><i class="fas fa-cloud"></i> Synced to Firestore</span>
       </div>
     </div>
@@ -604,7 +652,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
     <button class="tab-btn" data-tab="closure" data-perm="editShifts" onclick="switchTab('closure')"><i class="fas fa-cash-register"></i> Daily Closure</button>
     <button class="tab-btn" data-tab="purchases" data-perm="viewPurchases" onclick="switchTab('purchases')"><i class="fas fa-truck"></i> Daily Purchases</button>
     <button class="tab-btn" data-tab="daily" data-perm="viewDaily" onclick="switchTab('daily')"><i class="fas fa-calendar-day"></i> Daily Performance</button>
-    <button class="tab-btn" data-tab="audit" data-perm="viewAudit" onclick="switchTab('audit')"><i class="fas fa-shield-halved"></i> Daily Balancing</button>
+    <button class="tab-btn" data-tab="audit" data-perm="viewAudit" onclick="switchTab('audit')"><i class="fas fa-balance-scale"></i> Daily Balancing</button>
     <button class="tab-btn" data-tab="shifts" data-perm="viewShifts" onclick="switchTab('shifts')"><i class="fas fa-clock"></i> Shifts History</button>
     <button class="tab-btn" data-tab="history" data-perm="viewHistory" onclick="switchTab('history')"><i class="fas fa-clock-rotate-left"></i> Month History</button>
     <button class="tab-btn" data-tab="log" data-perm="viewLog" onclick="switchTab('log')"><i class="fas fa-history"></i> Audit Log</button>
@@ -671,7 +719,14 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
               <div class="hint">Enter the sales figure from your POS/system.</div>
             </div>
 
-            <div class="closure-payments" style="background:#fff8ec;border-color:#f0d8a8;">
+            <div class="closure-payments"><h4><i class="fas fa-shield-halved"></i> Other Channels &amp; Controls</h4>
+<div class="pay-row">
+<div class="closure-field" style="margin:0;"><label><i class="fas fa-building-columns"></i> Bank / Card / POS payments</label><input type="number" step="0.01" id="clBank" placeholder="0" oninput="recalcClosure()"></div>
+<div class="closure-field" style="margin:0;"><label><i class="fas fa-book"></i> Credit sales (unpaid)</label><input type="number" step="0.01" id="clCreditSales" placeholder="0" oninput="recalcClosure()"></div></div>
+<div class="pay-row" style="margin-top:0.6rem;">
+<div class="closure-field" style="margin:0;"><label><i class="fas fa-hand-holding-dollar"></i> Credit repaid in cash</label><input type="number" step="0.01" id="clCreditRepay" placeholder="0" oninput="recalcClosure()"></div>
+<div class="closure-field" style="margin:0;"><label><i class="fas fa-rotate-left"></i> Voids / refunds / discounts</label><input type="number" step="0.01" id="clVoids" placeholder="0" oninput="recalcClosure()"></div></div></div>
+<div class="closure-payments" style="background:#fff8ec;border-color:#f0d8a8;">
               <h4 style="color:#b06d00;"><i class="fas fa-receipt" style="color:#d48a00;"></i> Expenses Paid from Till (one by one)</h4>
               <div id="clExpenseList"></div>
               <button type="button" class="add-row-btn" style="margin-top:0.6rem;" onclick="addClosureExpense()"><i class="fas fa-plus-circle"></i> Add expense</button>
@@ -707,7 +762,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
             <div class="result-box" id="closureResults"></div>
             <div style="margin-top:1.2rem;background:#f4f9fe;border-radius:14px;padding:1rem 1.1rem;border:1px dashed #c9d9e8;font-size:0.8rem;color:#2a4a6a;line-height:1.6;">
               <strong style="display:block;color:#0b2b44;margin-bottom:0.4rem;"><i class="fas fa-info-circle" style="color:#1d7a4b;"></i> How it's computed</strong>
-              <div style="display:flex;justify-content:space-between;padding:0.15rem 0;"><span>Cash Expected</span><strong style="color:#0b2b44;">Opening Float + (Sales − MOMO − Airtel) − Expenses</strong></div>
+              <div style="display:flex;justify-content:space-between;padding:0.15rem 0;"><span>Cash Expected</span><strong style="color:#0b2b44;">Float + (Sales − MoMo − Airtel − Bank − Credit sales) + Credit repaid − Expenses</strong></div>
               <div style="display:flex;justify-content:space-between;padding:0.15rem 0;"><span>Difference</span><strong style="color:#0b2b44;">Cash Counted − Cash Expected</strong></div>
               <div style="margin-top:0.5rem;font-size:0.75rem;color:#7b8fa0;">Positive = <strong style="color:#1d7a4b;">Extra</strong>. Negative = <strong style="color:#b33a3a;">Loss</strong>. Expenses are summed from the itemised list above.</div>
             </div>
@@ -819,7 +874,9 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Stock Cost (UGX)</label><input type="number" id="newClosureStock" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Cost value of stock on hand</div></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Stock Price (UGX)</label><input type="number" id="newClosureStockPrice" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Retail value of stock on hand</div></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Credit (UGX)</label><input type="number" id="newClosureCredit" placeholder="0" style="margin-top:0.3rem;"></div>
-        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Cash at Hand (UGX)</label><input type="number" id="newClosureCash" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Auto-filled from shift closures if blank</div></div>
+        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Cash at Hand (UGX)</label><input type="number" id="newClosureCash" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Count it yourself (required)</div></div>
+        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Cash banked / taken out (UGX)</label><input type="number" id="newClosureOut" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Since last record: deposits, drawings, cash-paid salaries/rent</div></div>
+        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Stock figure source</label><select id="newClosureSrc" style="margin-top:0.3rem;"><option value="physical">Physical count</option><option value="system">System / book figure</option></select></div>
         <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="addClosureEntry()" style="width:100%;justify-content:center;"><i class="fas fa-plus"></i> Add entry</button></div>
       </div>
     </div>
@@ -915,6 +972,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <div class="form-row"><label>Contact Person (optional)</label><input type="text" id="supContact" placeholder="e.g. Mr. Ssebugwawo"></div>
         <div class="form-row"><label>Phone (optional)</label><input type="text" id="supPhone" placeholder="e.g. +256 700 000 000"></div>
         <div class="form-row"><label>Category (optional)</label><input type="text" id="supCategory" placeholder="e.g. Cooking Oil"></div>
+        <div class="form-row"><label>Opening balance you already owe (optional)</label><input type="number" id="supOpening" placeholder="0"></div>
         <button class="btn btn-primary" onclick="addSupplier()" style="width:100%;justify-content:center;"><i class="fas fa-save"></i> Add Supplier</button>
       </div>
       <div class="admin-card">
@@ -922,6 +980,26 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <div id="suppliersList" style="max-height:520px;overflow-y:auto;"></div>
       </div>
     </div>
+    <div class="section-title"><i class="fas fa-book"></i> Supplier ledger: what you owe and what you have paid</div>
+    <div class="summary-grid" id="ledgerSummary"></div>
+    <div class="admin-grid">
+      <div class="admin-card editor-only">
+        <h3><i class="fas fa-money-bill-transfer"></i> Record Payment to Supplier</h3>
+        <div class="form-row"><label>Supplier</label><select id="payName"></select></div>
+        <div class="form-row"><label>Date</label><input type="date" id="payDate"></div>
+        <div class="form-row"><label>Amount (UGX)</label><input type="number" id="payAmt" placeholder="0"></div>
+        <div class="form-row"><label>Paid by</label><select id="payMode"><option value="Cash">Cash (reduces cash at hand)</option><option value="Mobile Money">Mobile Money</option><option value="Bank">Bank</option></select></div>
+        <div class="form-row"><label>Reference / receipt no.</label><input type="text" id="payRef" placeholder="e.g. receipt or MoMo ID"></div>
+        <button class="btn btn-primary" onclick="recordSupplierPayment()" style="width:100%;justify-content:center;"><i class="fas fa-save"></i> Record Payment</button>
+        <div style="font-size:0.72rem;color:#7b8fa0;margin-top:0.6rem;">Record a supplier payment here once. Do not also enter it as a till expense. Purchases marked Cash in Daily Purchases are already treated as paid.</div>
+      </div>
+      <div class="admin-card">
+        <h3><i class="fas fa-file-invoice"></i> Statement</h3>
+        <select id="ledgerSupplier" onchange="renderSupplierLedger()" style="margin-bottom:0.8rem;"></select>
+        <div class="table-scroll" style="max-height:360px;overflow-y:auto;"><table style="min-width:520px;"><thead><tr><th>Date</th><th>Details</th><th>Bought on credit</th><th>Paid</th><th>Balance</th><th></th></tr></thead><tbody id="ledgerStatement"></tbody></table></div>
+      </div>
+    </div>
+    <div class="table-card"><div class="table-scroll"><table><thead><tr><th>Supplier</th><th>Opening</th><th>Credit purchases</th><th>Paid at purchase</th><th>Payments</th><th>Balance owed</th></tr></thead><tbody id="ledgerBody"></tbody></table></div></div>
   </div>
 
   <!-- TEAM -->
@@ -1151,7 +1229,7 @@ try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebas
 /* CONSTANTS */
 const EXPENSE_TYPES = ['Salary','Rent','Utilities (Electricity/Water)','Transport','Fuel','Packaging Materials','Cleaning Supplies','Security Services','Wifi / Internet','Telephone / Airtime','Waste Disposal','Licenses & Permits','Insurance','Marketing & Advertising','Repairs & Maintenance','Bank Charges','Loan Repayment','Taxes','Staff Welfare','Loss / Theft','Other'];
 const CLOSURE_EXPENSE_TYPES = ['Transport','Fuel','Packaging','Cleaning','Airtime','Waste','Repairs','Staff Welfare','Security','Electricity','Water','Other'];
-const LOCATION_SUBCOLLECTIONS = ['months','weeklyClosures','auditLog','shifts','suppliers','monthHistory'];
+const LOCATION_SUBCOLLECTIONS = ['months','weeklyClosures','auditLog','shifts','suppliers','supplierPayments','monthHistory'];
 
 const PERIOD_DEFS = {
   morning:   { label: 'Morning',   icon: 'fa-sun',       start: 0,  end: 12 },
@@ -1174,6 +1252,7 @@ let saveTimeout = null, activeTab = 'closure', activeAdminTab = 'overview';
 let currentUser = null, currentLocationId = null;
 let allUsersCache = {}, allLocationsCache = {};
 let suppliersCache = [];
+let supplierPayments = [];
 let captchaVerified = false;
 let currentShiftId = null, currentShiftData = null;
 let pendingPeriod = null;
@@ -1458,6 +1537,8 @@ async function loadLocationData(locationId) {
     const sSnap = await db.collection('locations').doc(locationId).collection('suppliers').get();
     suppliersCache = []; sSnap.forEach(doc => suppliersCache.push({ id: doc.id, ...doc.data() }));
     suppliersCache.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+    const spSnap = await db.collection('locations').doc(locationId).collection('supplierPayments').get();
+    supplierPayments = []; spSnap.forEach(doc => supplierPayments.push({ id: doc.id, ...doc.data() }));
     const shSnap = await db.collection('locations').doc(locationId).collection('shifts').orderBy('date','desc').limit(500).get();
     allShifts = []; shSnap.forEach(doc => allShifts.push({ id: doc.id, ...doc.data() }));
     allShifts.sort((a,b) => { if(a.date !== b.date) return (b.date||'').localeCompare(a.date||''); return (b.openedAt||'').localeCompare(a.openedAt||''); });
@@ -1587,6 +1668,7 @@ async function doLogin(){
       let adminPass = 'admin';
       if(adminDoc.exists && adminDoc.data().password) adminPass = adminDoc.data().password;
       if(p !== adminPass) throw new Error('Invalid admin password');
+      if(p === 'admin') setTimeout(()=>showToast('Default admin password in use. Change it now.', 'error'), 1500);
       currentUser = { username: 'admin', fullName: 'Administrator', role: 'admin', permissions: DEFAULT_PERMISSIONS.manager };
       currentLocationId = null;
       saveSession();
@@ -1733,7 +1815,7 @@ async function startNewShift(){
   const newShift = {
     date: today, period: pendingPeriod, periodSource: 'manual', clockPeriodAtStart: clockPeriod,
     cashier: currentUser?.username || 'unknown', cashierName: currentUser?.fullName || currentUser?.username || 'unknown',
-    mtn: 0, airtel: 0, closingSales: 0, expenses: 0, openingFloat: 0, counted: 0,
+    mtn: 0, airtel: 0, bank: 0, creditSales: 0, creditRepay: 0, voids: 0, closingSales: 0, expenses: 0, openingFloat: 0, counted: 0,
     sales: 0, cashExpected: 0, difference: 0, expenseItems: [], note: '',
     status: 'open', openedAt: nowIso, openedAtTime: nowTimeStr()
   };
@@ -1774,14 +1856,14 @@ function renderClosurePanel(){
   `;
 
   const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = (v === 0 || v) ? v : ''; };
-  setVal('clMtn', sh.mtn); setVal('clAirtel', sh.airtel); setVal('clClosingSales', sh.closingSales);
+  setVal('clMtn', sh.mtn); setVal('clAirtel', sh.airtel); setVal('clBank', sh.bank); setVal('clCreditSales', sh.creditSales); setVal('clCreditRepay', sh.creditRepay); setVal('clVoids', sh.voids); setVal('clClosingSales', sh.closingSales);
   setVal('clCounted', sh.counted); setVal('clOpeningFloat', sh.openingFloat);
   document.getElementById('clNote').value = sh.note || '';
 
   if(!Array.isArray(sh.expenseItems)) sh.expenseItems = [];
 
   const canEdit = !isClosed || hasPerm('manageUsers') || hasPerm('manageShiftClosures');
-  ['clMtn','clAirtel','clClosingSales','clCounted','clOpeningFloat','clNote'].forEach(id => {
+  ['clMtn','clAirtel','clBank','clCreditSales','clCreditRepay','clVoids','clClosingSales','clCounted','clOpeningFloat','clNote'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.readOnly = !canEdit; el.style.background = canEdit ? 'white' : '#f2f6fa'; }
   });
@@ -1882,7 +1964,9 @@ function recalcClosure(){
   const expenses = (currentShiftData && Array.isArray(currentShiftData.expenseItems)) ? currentShiftData.expenseItems.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0) : 0;
   const openingFloat = getNum('clOpeningFloat');
   const sales = closingSales;
-  const cashExpected = openingFloat + (sales - mtn - airtel) - expenses;
+  const bank = getNum('clBank'), creditSales = getNum('clCreditSales'), creditRepay = getNum('clCreditRepay'), voids = getNum('clVoids');
+  const blind = !!currentShiftData && currentShiftData.status !== 'closed' && !hasPerm('manageUsers') && !hasPerm('manageShiftClosures');
+  const cashExpected = openingFloat + (sales - mtn - airtel - bank - creditSales) + creditRepay - expenses;
   const difference = counted - cashExpected;
   let diffClass = 'balanced', diffLabel = 'Balanced', diffSub = 'Perfect count — nothing extra or missing';
   if(difference > 0){ diffClass = 'extra'; diffLabel = `Extra UGX ${fmt(difference)}`; diffSub = 'Cash counted more than expected'; }
@@ -1895,17 +1979,21 @@ function recalcClosure(){
       <div class="result-row"><span class="lbl">Sales (system)</span><span class="v">UGX ${fmt(sales)}</span></div>
       <div class="result-row"><span class="lbl">MTN MOMO</span><span class="v">UGX ${fmt(mtn)}</span></div>
       <div class="result-row"><span class="lbl">Airtel Money</span><span class="v">UGX ${fmt(airtel)}</span></div>
+      <div class="result-row"><span class="lbl">Bank / Card</span><span class="v">UGX ${fmt(bank)}</span></div>
+      <div class="result-row"><span class="lbl">Credit sales</span><span class="v">UGX ${fmt(creditSales)}</span></div>
+      <div class="result-row"><span class="lbl">Credit repaid in cash</span><span class="v">UGX ${fmt(creditRepay)}</span></div>
+      <div class="result-row"><span class="lbl">Voids / refunds / discounts</span><span class="v">UGX ${fmt(voids)}</span></div>
       <div class="result-row"><span class="lbl">Mobile Money Total</span><span class="v">UGX ${fmt(mtn + airtel)}</span></div>
-      <div class="result-row"><span class="lbl">Cash portion of sales</span><span class="v">UGX ${fmt(Math.max(0, sales - mtn - airtel))}</span></div>
+      <div class="result-row"><span class="lbl">Cash portion of sales</span><span class="v">UGX ${fmt(Math.max(0, sales - mtn - airtel - bank - creditSales))}</span></div>
       <div class="result-row"><span class="lbl">Opening float</span><span class="v">UGX ${fmt(openingFloat)}</span></div>
       <div class="result-row"><span class="lbl">Expenses paid (${(currentShiftData?.expenseItems||[]).length})</span><span class="v">−UGX ${fmt(expenses)}</span></div>
-      <div class="result-row"><span class="lbl">Cash Expected</span><span class="v">UGX ${fmt(cashExpected)}</span></div>
+      ${blind ? '' : `<div class="result-row"><span class="lbl">Cash Expected</span><span class="v">UGX ${fmt(cashExpected)}</span></div>`}
       <div class="result-row"><span class="lbl">Cash Counted</span><span class="v">UGX ${fmt(counted)}</span></div>
-      <div class="result-diff ${diffClass}">${diffLabel}<span class="meta">${diffSub}</span></div>
+      ${blind ? '<div class="result-diff balanced">Count recorded<span class="meta">Blind count: expected cash and the difference are shown to the manager after you end the shift.</span></div>' : `<div class="result-diff ${diffClass}">${diffLabel}<span class="meta">${diffSub}</span></div>`}
     `;
   }
   if(currentShiftData && (currentShiftData.status !== 'closed' || hasPerm('manageUsers') || hasPerm('manageShiftClosures'))) {
-    currentShiftData.mtn = mtn; currentShiftData.airtel = airtel;
+    currentShiftData.mtn = mtn; currentShiftData.airtel = airtel; currentShiftData.bank = bank; currentShiftData.creditSales = creditSales; currentShiftData.creditRepay = creditRepay; currentShiftData.voids = voids;
     currentShiftData.closingSales = closingSales; currentShiftData.counted = counted;
     currentShiftData.expenses = expenses; currentShiftData.openingFloat = openingFloat;
     currentShiftData.sales = sales; currentShiftData.cashExpected = cashExpected;
@@ -1922,7 +2010,7 @@ async function saveClosureDraft(){
   try {
     if(firebaseReady && currentLocationId && currentShiftId && !currentShiftId.startsWith('local_')) {
       await db.collection('locations').doc(currentLocationId).collection('shifts').doc(currentShiftId).update({
-        mtn: currentShiftData.mtn, airtel: currentShiftData.airtel,
+        mtn: currentShiftData.mtn, airtel: currentShiftData.airtel, bank: currentShiftData.bank||0, creditSales: currentShiftData.creditSales||0, creditRepay: currentShiftData.creditRepay||0, voids: currentShiftData.voids||0,
         closingSales: currentShiftData.closingSales, counted: currentShiftData.counted,
         expenses: currentShiftData.expenses, openingFloat: currentShiftData.openingFloat,
         sales: currentShiftData.sales, cashExpected: currentShiftData.cashExpected,
@@ -1944,7 +2032,8 @@ async function endShift(){
   recalcClosure();
   const d = currentShiftData.difference || 0;
   let msg = `End your ${periodLabel(currentShiftData.period)} shift now? This will lock the shift.`;
-  if(d > 0) msg += `\n\nExtra cash: UGX ${fmt(d)}`;
+  const _blind = !hasPerm('manageUsers') && !hasPerm('manageShiftClosures');
+  if(_blind) {} else if(d > 0) msg += `\n\nExtra cash: UGX ${fmt(d)}`;
   else if(d < 0) msg += `\n\nCash shortage: UGX ${fmt(-d)}`;
   else msg += `\n\nPerfect count.`;
   if(!confirm(msg)) return;
@@ -1956,7 +2045,7 @@ async function endShift(){
     currentShiftData.closedBy = currentUser.username;
     if(firebaseReady && currentLocationId && currentShiftId && !currentShiftId.startsWith('local_')) {
       await db.collection('locations').doc(currentLocationId).collection('shifts').doc(currentShiftId).update({
-        mtn: currentShiftData.mtn, airtel: currentShiftData.airtel,
+        mtn: currentShiftData.mtn, airtel: currentShiftData.airtel, bank: currentShiftData.bank||0, creditSales: currentShiftData.creditSales||0, creditRepay: currentShiftData.creditRepay||0, voids: currentShiftData.voids||0,
         closingSales: currentShiftData.closingSales, counted: currentShiftData.counted,
         expenses: currentShiftData.expenses, openingFloat: currentShiftData.openingFloat,
         sales: currentShiftData.sales, cashExpected: currentShiftData.cashExpected,
@@ -1996,7 +2085,7 @@ async function reopenShift(){
   } catch(e) { showToast('Failed to re-open: ' + e.message, 'error'); }
 }
 
-async function syncCashToClosureAudit(){
+async function syncCashToClosureAudit(){ return;
   const today = todayStr();
   const todaysShifts = allShifts.filter(sh => sh.date === today);
   if(!todaysShifts.length) return;
@@ -2184,7 +2273,8 @@ async function editShift(id) {
   const openingFloat = parseFloat(newOpeningFloat) || 0;
   const counted = parseFloat(newCounted) || 0;
   const sales = closingSales;
-  const cashExpected = openingFloat + (sales - mtn - airtel) - expenses;
+  const _b = parseFloat(sh.bank)||0, _c = parseFloat(sh.creditSales)||0, _r = parseFloat(sh.creditRepay)||0;
+  const cashExpected = openingFloat + (sales - mtn - airtel - _b - _c) + _r - expenses;
   const difference = counted - cashExpected;
 
   const updated = { ...sh, mtn, airtel, closingSales, expenses, openingFloat, counted, sales, cashExpected, difference, note: newNote, expenseItems: parsedItems, editedAt: new Date().toISOString(), editedBy: currentUser.username };
@@ -2194,7 +2284,7 @@ async function editShift(id) {
     }
     const idx = allShifts.findIndex(s => s.id === id);
     if (idx >= 0) allShifts[idx] = updated;
-    addLog('Edit Shift', `Shift ${sh.date} ${periodLabel(sh.period)} edited by ${currentUser.username}`);
+    addLog('Edit Shift', `Shift ${sh.date} ${periodLabel(sh.period)} edited by ${currentUser.username} — sales ${fmt(sh.closingSales ?? sh.sales)}→${fmt(closingSales)}, counted ${fmt(sh.counted)}→${fmt(counted)}, expenses ${fmt(sh.expenses)}→${fmt(expenses)}, diff ${fmtSigned(sh.difference)}→${fmtSigned(difference)}`);
     showToast('Shift updated', 'success');
     renderShifts();
     if (currentShiftId === id) { currentShiftData = updated; renderClosurePanel(); }
@@ -2211,7 +2301,7 @@ async function deleteShift(id) {
       await db.collection('locations').doc(currentLocationId).collection('shifts').doc(id).delete();
     }
     allShifts = allShifts.filter(s => s.id !== id);
-    addLog('Delete Shift', `Shift ${sh.date} ${periodLabel(sh.period)} deleted by ${currentUser.username}`);
+    addLog('Delete Shift', `Shift ${sh.date} ${periodLabel(sh.period)} deleted by ${currentUser.username} (sales ${fmt(sh.sales)}, counted ${fmt(sh.counted)}, diff ${fmtSigned(sh.difference)})`);
     if (currentShiftId === id) { currentShiftId = null; currentShiftData = null; renderClosureView(); }
     showToast('Shift deleted', 'success');
     renderShifts();
@@ -2367,7 +2457,7 @@ async function clearAllActivityLogs(){
   } catch(e) { showSaveStatus('error','Failed','admin'); showToast('Failed: ' + e.message, 'error'); }
 }
 async function clearLocationAuditLog(){
-  if(!hasPerm('manageUsers')){ showToast('Only managers can clear the log', 'error'); return; }
+  if(!currentUser || currentUser.role !== 'admin'){ showToast('The audit log can only be cleared by the owner (admin account).', 'error'); return; }
   if(!confirm('Clear the audit log for your location? Cannot be undone.')) return;
   if(!confirm('FINAL WARNING: The entire audit trail for this location will be erased. Continue?')) return;
   showSaveStatus('saving','Clearing...');
@@ -2566,7 +2656,61 @@ async function saveAdminPassword(){
 }
 
 /* SUPPLIERS */
+function allPurchasesList(){ const o = []; Object.keys(allMonthsData).forEach(m => (allMonthsData[m].purchases || []).forEach(p => o.push(p))); return o; }
+function buildLedger(upTo){
+  const L = {}; const g = n => (L[n] = L[n] || {name:n, opening:0, credit:0, paidNow:0, paid:0, lastPay:'', oldestCredit:''});
+  suppliersCache.forEach(s => { g(s.name).opening = parseFloat(s.openingBalance) || 0; });
+  allPurchasesList().forEach(p => { if(upTo && (p.date||'') > upTo) return; const r = g((p.supplier||'').trim() || '(Unnamed)'), t = parseFloat(p.total) || 0;
+    if((p.payment||'').toLowerCase() === 'credit'){ r.credit += t; if(!r.oldestCredit || p.date < r.oldestCredit) r.oldestCredit = p.date; } else r.paidNow += t; });
+  supplierPayments.forEach(x => { if(upTo && x.date > upTo) return; const r = g(x.supplier); r.paid += parseFloat(x.amount) || 0; if(x.date > r.lastPay) r.lastPay = x.date; });
+  Object.values(L).forEach(r => r.balance = r.opening + r.credit - r.paid);
+  return L;
+}
+function renderSupplierLedger(){
+  const body = document.getElementById('ledgerBody'); if(!body) return;
+  const rows = Object.values(buildLedger()).sort((a,b) => b.balance - a.balance);
+  const owed = rows.reduce((a,r) => a + Math.max(0, r.balance), 0), over = rows.filter(r => r.balance < -1).length;
+  const sg = document.getElementById('ledgerSummary');
+  if(sg) sg.innerHTML = `<div class="sum-card ${owed>0?'flag-amber':'flag-green'}"><div class="sum-label">Total owed to suppliers</div><div class="sum-value">${fmt(owed)}</div></div><div class="sum-card"><div class="sum-label">Suppliers with a balance</div><div class="sum-value">${rows.filter(r=>r.balance>0).length}</div></div><div class="sum-card"><div class="sum-label">Paid to suppliers (all time)</div><div class="sum-value">${fmt(rows.reduce((a,r)=>a+r.paid+r.paidNow,0))}</div></div><div class="sum-card ${over?'flag-red':'flag-green'}"><div class="sum-label">Overpaid suppliers</div><div class="sum-value">${over}</div></div>`;
+  const empty = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#7b8fa0;">Nothing to show yet.</td></tr>';
+  body.innerHTML = rows.length ? rows.map(r => `<tr><td><strong>${r.name}</strong></td><td>${fmt(r.opening)}</td><td>${fmt(r.credit)}</td><td>${fmt(r.paidNow)}</td><td>${fmt(r.paid)}</td><td style="font-weight:700;color:${r.balance<0?'#b33a3a':(r.balance>0?'#b06d00':'#1d7a4b')};">${fmt(r.balance)}</td></tr>`).join('') : empty;
+  const names = [...new Set([...suppliersCache.map(s=>s.name), ...rows.map(r=>r.name)])].filter(n => n && n !== '(Unnamed)').sort();
+  ['payName','ledgerSupplier'].forEach(id => { const el = document.getElementById(id); if(!el) return; const cur = el.value; el.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join(''); if(cur && names.includes(cur)) el.value = cur; });
+  const pd = document.getElementById('payDate'); if(pd && !pd.value) pd.value = todayStr();
+  const nm = (document.getElementById('ledgerSupplier')||{}).value, st = document.getElementById('ledgerStatement'); if(!st) return;
+  if(!nm){ st.innerHTML = empty; return; }
+  const ev = []; const sup = suppliersCache.find(s => s.name === nm);
+  if(sup && parseFloat(sup.openingBalance)) ev.push({date:'', t:'Opening balance', debit:parseFloat(sup.openingBalance), pay:0});
+  allPurchasesList().forEach(p => { if((p.supplier||'').trim() === nm && (p.payment||'').toLowerCase() === 'credit') ev.push({date:p.date||'', t:'Credit purchase' + (p.reference ? ' · ' + p.reference : ''), debit:parseFloat(p.total)||0, pay:0}); });
+  supplierPayments.filter(x => x.supplier === nm).forEach(x => ev.push({date:x.date, t:'Payment (' + (x.mode||'Cash') + ')' + (x.reference ? ' · ' + x.reference : ''), debit:0, pay:parseFloat(x.amount)||0, id:x.id}));
+  ev.sort((a,b) => (a.date||'').localeCompare(b.date||'')); let bal = 0; const canDel = hasPerm('manageUsers') || hasPerm('manageShiftClosures');
+  st.innerHTML = ev.map(e => { bal += e.debit - e.pay; return `<tr><td>${e.date||'—'}</td><td>${e.t}</td><td>${e.debit?fmt(e.debit):''}</td><td>${e.pay?fmt(e.pay):''}</td><td style="font-weight:600;">${fmt(bal)}</td><td>${e.id&&canDel?`<button class="remove-btn" onclick="deleteSupplierPayment('${e.id}')"><i class="fas fa-trash-alt"></i></button>`:''}</td></tr>`; }).join('') || empty;
+}
+async function recordSupplierPayment(){
+  if(!hasPerm('editPurchases')){ showToast('No permission', 'error'); return; }
+  const supplier = document.getElementById('payName').value, date = document.getElementById('payDate').value, amount = parseFloat(document.getElementById('payAmt').value);
+  if(!supplier || !date || !(amount > 0)){ showToast('Pick a supplier, a date and an amount above zero', 'error'); return; }
+  const rec = { supplier, date, amount, mode: document.getElementById('payMode').value, reference: document.getElementById('payRef').value.trim(), by: currentUser.username, at: new Date().toISOString() };
+  try {
+    if(firebaseReady && currentLocationId){ const ref = await db.collection('locations').doc(currentLocationId).collection('supplierPayments').add(rec); rec.id = ref.id; } else rec.id = 'local_' + Date.now();
+    supplierPayments.push(rec);
+    addLog('Supplier Payment', `${supplier}: UGX ${fmt(amount)} by ${rec.mode} on ${date}${rec.reference ? ' (' + rec.reference + ')' : ''}`);
+    document.getElementById('payAmt').value = ''; document.getElementById('payRef').value = '';
+    renderSupplierLedger(); showToast('Payment recorded', 'success');
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+async function deleteSupplierPayment(id){
+  if(!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')){ showToast('Only a manager can delete payments', 'error'); return; }
+  const x = supplierPayments.find(q => q.id === id); if(!x || !confirm(`Delete this payment of UGX ${fmt(x.amount)} to ${x.supplier}?`)) return;
+  try {
+    if(firebaseReady && currentLocationId && !id.startsWith('local_')) await db.collection('locations').doc(currentLocationId).collection('supplierPayments').doc(id).delete();
+    supplierPayments = supplierPayments.filter(q => q.id !== id);
+    addLog('Delete Supplier Payment', `${x.supplier}: UGX ${fmt(x.amount)} (${x.mode}) dated ${x.date} deleted by ${currentUser.username}`);
+    renderSupplierLedger();
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
 function renderSuppliersList(){
+  try { renderSupplierLedger(); } catch(e) { console.warn(e); }
   const list = document.getElementById('suppliersList');
   if(!list) return;
   if(!suppliersCache.length) { list.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#7b8fa0;">No suppliers yet. Add your first supplier on the left.</div>'; return; }
@@ -2588,7 +2732,7 @@ async function addSupplier(){
   try {
     const docId = name.replace(/[\/\\#?\[\]]/g,'_');
     if((await db.collection('locations').doc(currentLocationId).collection('suppliers').doc(docId).get()).exists) { showToast('Supplier already exists', 'error'); return; }
-    await db.collection('locations').doc(currentLocationId).collection('suppliers').doc(docId).set({ name, contact, phone, category, createdAt: new Date().toISOString(), createdBy: currentUser.username });
+    await db.collection('locations').doc(currentLocationId).collection('suppliers').doc(docId).set({ name, contact, phone, category, openingBalance: parseFloat((document.getElementById('supOpening')||{}).value)||0, createdAt: new Date().toISOString(), createdBy: currentUser.username });
     addLog('Add Supplier', `${name}`);
     document.getElementById('supName').value = ''; document.getElementById('supContact').value = ''; document.getElementById('supPhone').value = ''; document.getElementById('supCategory').value = '';
     showToast('Supplier added', 'success');
@@ -3061,14 +3205,14 @@ function computeAuditFlags(){
     const cp = prevCredit ? (cd/prevCredit)*100 : 0;
     const cap = prevCash ? (cad/prevCash)*100 : 0;
     let flag='green', note='Normal range';
-    if(scp<-12){flag='red';note=`Stock cost dropped ${Math.abs(scp).toFixed(1)}%`;}
+    if(scp<-20){flag='red';note=`Stock cost dropped ${Math.abs(scp).toFixed(1)}%`;}
     else if(cp<-20){flag='red';note=`Credit dropped ${Math.abs(cp).toFixed(1)}%`;}
     else if(cap<-25){flag='red';note=`Cash dropped ${Math.abs(cap).toFixed(1)}%`;}
-    else if(cp>30){flag='red';note=`Credit jumped ${cp.toFixed(1)}%`;}
-    else if(scp<-6){flag='amber';note=`Stock cost dropped ${Math.abs(scp).toFixed(1)}%`;}
+    else if(cp>50){flag='red';note=`Credit jumped ${cp.toFixed(1)}%`;}
+    else if(scp<-12){flag='amber';note=`Stock cost dropped ${Math.abs(scp).toFixed(1)}%`;}
     else if(cp<-10){flag='amber';note=`Credit dropped ${Math.abs(cp).toFixed(1)}%`;}
     else if(cap<-15){flag='amber';note=`Cash dropped ${Math.abs(cap).toFixed(1)}%`;}
-    else if(cp>18){flag='amber';note=`Credit increased ${cp.toFixed(1)}%`;}
+    else if(cp>30){flag='amber';note=`Credit increased ${cp.toFixed(1)}%`;}
     return { ...row, stockCost, stockPrice, credit, cash, stockCostDelta:scd, creditDelta:cd, cashDelta:cad, stockPct:scp, creditPct:cp, cashPct:cap, flag, flagNote:note };
   });
 }
@@ -3143,9 +3287,9 @@ async function addClosureEntry(){
   const stockPrice = parseFloat(document.getElementById('newClosureStockPrice').value)||0;
   const credit = parseFloat(document.getElementById('newClosureCredit').value)||0;
   let cash = parseFloat(document.getElementById('newClosureCash').value);
-  if(isNaN(cash)) { const dayShifts = allShifts.filter(s => s.date === date); cash = dayShifts.reduce((sum, s) => sum + (parseFloat(s.counted)||0), 0); }
+  if(isNaN(cash)){ showToast('Enter the cash you counted at hand. It is no longer auto-filled, so the audit can compare it with the shift counts.', 'error'); return; }
   if(!date){ showToast('Please enter a date', 'error'); return; }
-  const closure = {date, stockCost, stockPrice, stock: stockCost, credit, cash};
+  const closure = {date, stockCost, stockPrice, stock: stockCost, credit, cash, out: parseFloat(document.getElementById('newClosureOut').value)||0, src: document.getElementById('newClosureSrc').value};
   const existing = weeklyClosures.find(w => w.date === date);
   if(existing) Object.assign(existing, closure); else weeklyClosures.push(closure);
   weeklyClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -3343,6 +3487,11 @@ function runAuditWithRange(){
   weeklyClosures.forEach(w => { if(w.date && new Date(w.date) >= fromDate && new Date(w.date) <= toDate) allClosures.push(w); });
   allClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
   const shiftsInRange = allShifts.filter(s => s.date && new Date(s.date) >= fromDate && new Date(s.date) <= toDate);
+  const _n = v => parseFloat(v) || 0;
+  const _hasP = allClosures.length >= 2, _pS = _hasP ? allClosures[0].date : '', _pE = _hasP ? allClosures[allClosures.length-1].date : '';
+  const _inP = d => !_hasP || (d > _pS && d <= _pE);
+  const flowPurch = allPurchases.filter(p => _inP(p.date)), flowEntries = allEntries.filter(e => _inP(e.date)), flowShifts = shiftsInRange.filter(s => _inP(s.date));
+  const flowPurchAmt = flowPurch.reduce((a,p)=>a+_n(p.total),0), flowCost = flowEntries.reduce((a,e)=>a+_n(e.cost),0);
 
   // ---- Core totals ----
   const totalSales = allEntries.reduce((s,r)=>s+(parseFloat(r.sales)||0),0);
@@ -3350,7 +3499,7 @@ function runAuditWithRange(){
   const totalDailyExp = allEntries.reduce((s,r)=>s+(parseFloat(r.expenses)||0),0);
   const gross = totalSales - totalCost - totalDailyExp;
   const monthSpan = Math.max(1, Math.round((toDate - fromDate) / (1000*60*60*24*30)));
-  const monthlyExp = totalMonthlyExpenses(currentExpenses()) * monthSpan;
+  const monthlyExp = totalMonthlyExpenses(currentExpenses()) * ((Math.round((toDate - fromDate) / 86400000) + 1) / 30);
   const net = gross - monthlyExp;
   const totalPurchasesAmt = allPurchases.reduce((s,p)=>s+(parseFloat(p.total)||0),0);
 
@@ -3378,7 +3527,7 @@ function runAuditWithRange(){
   const closingMargin = closingPrice ? ((closingPrice - closingCost) / closingPrice * 100) : 0;
 
   // ---- 1. Stock Cost Flow ----
-  const expectedClosingCost = openingCost + totalPurchasesAmt - totalCost;
+  const expectedClosingCost = openingCost + flowPurchAmt - flowCost;
   const stockCostGap = closingCost - expectedClosingCost;
   const stockCostGapPct = expectedClosingCost ? (stockCostGap / expectedClosingCost * 100) : 0;
 
@@ -3388,8 +3537,14 @@ function runAuditWithRange(){
 
   // ---- 3. Cash Flow ----
   // Cash expected = opening cash + cash portion of sales − expenses (daily entries)
-  const cashPortionOfSales = totalSales - shiftsInRange.reduce((sum,s)=>sum + (parseFloat(s.mtn)||0) + (parseFloat(s.airtel)||0), 0);
-  const cashExpected = openingCash + cashPortionOfSales - totalDailyExp;
+  const cashPortionOfSales = flowShifts.reduce((a,s)=>a + _n(s.sales) - _n(s.mtn) - _n(s.airtel) - _n(s.bank) - _n(s.creditSales) + _n(s.creditRepay), 0);
+  const cashPurch = flowPurch.filter(p=>(p.payment||'').toLowerCase()==='cash').reduce((a,p)=>a+_n(p.total),0) + supplierPayments.filter(x=>_inP(x.date) && x.date>=fromStr && x.date<=toStr && (x.mode||'Cash')==='Cash').reduce((a,x)=>a+_n(x.amount),0);
+  const withdrawn = allClosures.filter(c=>_inP(c.date)).reduce((a,c)=>a+_n(c.out),0);
+  const flowDailyExp = flowEntries.reduce((a,e)=>a+_n(e.expenses),0);
+  const cashExpected = openingCash + cashPortionOfSales - cashPurch - flowDailyExp - withdrawn;
+  const physicalCash = closingCash;
+  const derivedCash = openingCash + flowShifts.reduce((a,s)=>a + _n(s.counted) - _n(s.openingFloat), 0) - cashPurch - withdrawn;
+  closingCash = derivedCash;
   const cashGap = closingCash - cashExpected;
   const cashGapPct = cashExpected ? (cashGap / cashExpected * 100) : 0;
 
@@ -3398,7 +3553,8 @@ function runAuditWithRange(){
   const creditPct = openingCredit ? (creditDelta / openingCredit * 100) : 0;
 
   // ---- 5. Balancing cash vs shift counted cash ----
-  const balancingVsShiftCashGap = closingCash - shiftCountedSum;
+  const dayMismatch = allClosures.map(c=>{ const ss = shiftsInRange.filter(x=>x.date===c.date).sort((a,b)=>String(a.openedAt).localeCompare(String(b.openedAt))); if(!ss.length) return null; return {date:c.date, gap:_n(c.cash)-_n(ss[ss.length-1].counted)}; }).filter(x=>x && Math.abs(x.gap)>20000);
+  const balancingVsShiftCashGap = dayMismatch.reduce((a,x)=>a+x.gap,0);
 
   // ---- 6. Data quality checks ----
   const zeroStockRecords = allClosures.filter(c => (parseFloat(c.stockCost || c.stock || 0)) === 0).length;
@@ -3430,8 +3586,9 @@ function runAuditWithRange(){
         <div class="formula-block">
           <div class="formula-title"><i class="fas fa-money-bill-wave"></i> 3. Cash Flow</div>
           <div><code>Cash Portion of Sales = Total Sales − (MTN + Airtel) from shifts in range</code></div>
-          <div><code>Cash Expected = Opening Cash at Hand + Cash Portion of Sales − Daily Expenses</code></div>
-          <div><code>Cash Gap = Actual Closing Cash at Hand − Cash Expected</code></div>
+          <div><code>Cash Expected = Opening Cash + Cash Portion of Sales (incl. credit repaid) − Daily Expenses − Cash paid to suppliers − Withdrawals</code></div>
+          <div><code>Actual Cash at Hand = Opening Cash + Σ(Shift Counted Cash − Opening Float) − Cash paid to suppliers (cash purchases + ledger cash payments) − Cash banked/withdrawn</code></div>
+          <div><code>Cash Gap = Actual Cash at Hand − Cash Expected</code></div>
           <div class="why"><strong>Why:</strong> cash should equal what came in (cash sales only) minus what was paid out. A negative gap = missing cash; a positive gap = unrecorded cash inflow or overstated expenses.</div>
         </div>
         <div class="formula-block">
@@ -3553,7 +3710,8 @@ function runAuditWithRange(){
   // ============================================================
   // 3. CASH FLOW CHECKS
   // ============================================================
-  if(allClosures.length >= 2){
+  if(allClosures.length >= 2 && flowShifts.length === 0){ issues.amber.push({title:'Cash flow not verified', desc:'No shift closures fall between the first and last balancing records, so cash cannot be reconciled.'}); }
+  else if(allClosures.length >= 2){
     if(Math.abs(cashGapPct) > 10){
       issues.red.push({
         title: 'Cash Flow Mismatch',
@@ -3634,10 +3792,10 @@ function runAuditWithRange(){
   // 6. SHIFT CASH TIE-OUT
   // ============================================================
   if(shiftsInRange.length > 0 && allClosures.length > 0){
-    if(Math.abs(balancingVsShiftCashGap) > 50000){
+    if(dayMismatch.length){
       issues.amber.push({
         title: 'Balancing Cash vs Shift Cash Mismatch',
-        desc: `Balancing cash <strong>${fmt(closingCash)}</strong> vs sum of shift counted cash <strong>${fmt(shiftCountedSum)}</strong> — gap <strong>${fmtSigned(balancingVsShiftCashGap)}</strong>. The two cash figures should match; one of them is wrong.`
+        desc: `On ${dayMismatch.length} day(s) the cash counted on the balancing sheet differs from the last shift count: ${dayMismatch.map(x=>x.date+' ('+fmtSigned(x.gap)+')').join(', ')}. Cash may have left the till after the last shift count.`
       });
     } else {
       issues.green.push({
@@ -3667,6 +3825,30 @@ function runAuditWithRange(){
   // ============================================================
   // 7. DATA-ENTRY SANITY CHECKS
   // ============================================================
+  if(shiftsInRange.length){
+    const sd = new Set(shiftsInRange.map(x=>x.date));
+    const dOn = allEntries.filter(e=>sd.has(e.date)).reduce((a,e)=>a+_n(e.sales),0);
+    const g = dOn - shiftSalesSum, gp = shiftSalesSum ? Math.abs(g)/shiftSalesSum*100 : 0;
+    const d = `Daily performance sales <strong>${fmt(dOn)}</strong> vs cashier shift sales <strong>${fmt(shiftSalesSum)}</strong> (gap ${fmtSigned(g)}, ${fmtPct(gp)}). Find the days that differ.`;
+    if(gp > 5) issues.red.push({title:'Daily Sales ≠ Shift Sales', desc:d}); else if(gp > 1) issues.amber.push({title:'Daily vs Shift Sales Variance', desc:d}); else issues.green.push({title:'Daily Sales match Shift Sales', desc:`Within ${fmtPct(gp)}.`});
+    const voids = shiftsInRange.reduce((a,x)=>a+_n(x.voids),0);
+    if(shiftSalesSum > 0 && voids/shiftSalesSum*100 > 1) issues.amber.push({title:'High Voids / Refunds / Discounts', desc:`<strong>${fmt(voids)}</strong> (${fmtPct(voids/shiftSalesSum*100)} of shift sales). Check which cashier and why.`});
+    const byC = {}; shiftsInRange.forEach(x=>{ const k = x.cashierName || x.cashier || '?'; byC[k] = byC[k] || {n:0,neg:0,short:0}; byC[k].n++; const df = _n(x.difference); if(df < 0){ byC[k].neg++; byC[k].short += -df; } });
+    Object.entries(byC).forEach(([k,v])=>{ if(v.n >= 3 && v.neg/v.n >= 0.5) issues.red.push({title:'Repeated shortages: '+k, desc:`${k} was short in <strong>${v.neg}</strong> of ${v.n} shifts (total ${fmt(v.short)}). A repeating pattern is more serious than a one-off miss.`}); });
+  }
+  if(flowShifts.length && allClosures.length){
+    const pg = physicalCash - derivedCash, pp = derivedCash ? Math.abs(pg)/Math.abs(derivedCash)*100 : 0;
+    const dd = `Cash physically counted on the last balancing sheet <strong>${fmt(physicalCash)}</strong> vs cash built up from daily closures less supplier payments and withdrawals <strong>${fmt(derivedCash)}</strong> (gap ${fmtSigned(pg)}, ${fmtPct(pp)}). ${pg < 0 ? 'Cash is missing, or a supplier payment or withdrawal was not recorded.' : 'Extra cash, or a payment was recorded that was not actually made.'}`;
+    if(Math.abs(pg) > 50000 && pp > 3) issues.red.push({title:'Physical Cash ≠ Cash from Closures', desc:dd}); else if(Math.abs(pg) > 20000) issues.amber.push({title:'Physical Cash Variance', desc:dd}); else issues.green.push({title:'Physical Cash matches Closures', desc:`Within ${fmt(Math.abs(pg))}.`});
+  }
+  const led = buildLedger(toStr), lv = Object.values(led);
+  lv.filter(r => r.balance < -1).forEach(r => issues.red.push({title:'Supplier overpaid: ' + r.name, desc:`Payments exceed purchases on credit by <strong>${fmt(-r.balance)}</strong>. Either a credit purchase was never recorded (stock or cost missing from the books) or a payment was recorded twice.`}));
+  const stale = lv.filter(r => r.balance > 0 && r.oldestCredit && (toDate - new Date(r.oldestCredit))/86400000 > 30 && (!r.lastPay || (toDate - new Date(r.lastPay))/86400000 > 30));
+  if(stale.length) issues.amber.push({title:'Supplier balances unpaid for 30+ days', desc:stale.map(r => `${r.name} (${fmt(r.balance)})`).join(', ')});
+  if(led['(Unnamed)'] && led['(Unnamed)'].credit > 0) issues.amber.push({title:'Credit purchases with no supplier name', desc:`<strong>${fmt(led['(Unnamed)'].credit)}</strong> bought on credit cannot be tracked in the ledger. Add the supplier name on those purchases.`});
+  const totalOwed = lv.reduce((a,r) => a + Math.max(0, r.balance), 0);
+  if(totalOwed > 0) issues.green.push({title:'Supplier ledger', desc:`You owe <strong>${fmt(totalOwed)}</strong> across ${lv.filter(r=>r.balance>0).length} supplier(s) as of ${toStr}.`});
+  if(allClosures.length && allClosures[allClosures.length-1].src !== 'physical') issues.amber.push({title:'Latest stock figure is not a physical count', desc:'The closing stock was marked as a system/book figure, so the stock check cannot detect missing stock. Do a physical count.'});
   if(zeroStockRecords > 0){
     issues.red.push({
       title: 'Stock Cost Recorded as Zero',
@@ -3698,10 +3880,10 @@ function runAuditWithRange(){
   // ============================================================
   // 8. PROFITABILITY CHECKS
   // ============================================================
-  const marginPct = totalSales ? (gross/totalSales*100) : 0;
+  const marginPct = totalSales ? ((totalSales-totalCost)/totalSales*100) : 0;
   if(totalSales > 0){
-    if(marginPct < 15) issues.red.push({ title:'Low Gross Margin', desc:`Gross margin is <strong>${fmtPct(marginPct)}</strong>.` });
-    else if(marginPct < 20) issues.amber.push({ title:'Moderate Gross Margin', desc:`Gross margin is <strong>${fmtPct(marginPct)}</strong>.` });
+    if(marginPct < 8) issues.red.push({ title:'Low Gross Margin', desc:`Gross margin is <strong>${fmtPct(marginPct)}</strong>.` });
+    else if(marginPct < 12) issues.amber.push({ title:'Moderate Gross Margin', desc:`Gross margin is <strong>${fmtPct(marginPct)}</strong>.` });
     else issues.green.push({ title:'Gross Margin', desc:`<strong>${fmtPct(marginPct)}</strong>.` });
 
     if(net < 0) issues.red.push({ title:'Negative Net Profit', desc:`Net profit is <strong>UGX ${fmt(net)}</strong>.` });
@@ -3757,8 +3939,8 @@ function runAuditWithRange(){
         </div>
         <div class="recon-box">
           <div class="row"><span class="lbl">Opening Stock Cost</span><span>${fmt(openingCost)}</span></div>
-          <div class="row"><span class="lbl">+ Purchases</span><span>${fmt(totalPurchasesAmt)}</span></div>
-          <div class="row"><span class="lbl">− Recorded Daily Cost</span><span>−${fmt(totalCost)}</span></div>
+          <div class="row"><span class="lbl">+ Purchases</span><span>${fmt(flowPurchAmt)}</span></div>
+          <div class="row"><span class="lbl">− Recorded Daily Cost</span><span>−${fmt(flowCost)}</span></div>
           <div class="row"><span class="lbl">= Expected Closing Cost</span><span>${fmt(expectedClosingCost)}</span></div>
           <div class="row"><span class="lbl">Actual Closing Stock Cost</span><span>${fmt(closingCost)}</span></div>
           <div class="row"><span class="lbl">Stock Cost Gap</span><span style="color:${Math.abs(stockCostGapPct)>10?'#b33a3a':(Math.abs(stockCostGapPct)>5?'#b06d00':'#1d7a4b')};">${fmtSigned(stockCostGap)} (${fmtPct(stockCostGapPct)})</span></div>
@@ -3772,7 +3954,7 @@ function runAuditWithRange(){
         <div class="recon-box">
           <div class="row"><span class="lbl">Opening Cash</span><span>${fmt(openingCash)}</span></div>
           <div class="row"><span class="lbl">+ Cash Portion of Sales</span><span>${fmt(cashPortionOfSales)}</span></div>
-          <div class="row"><span class="lbl">− Daily Expenses</span><span>−${fmt(totalDailyExp)}</span></div>
+          <div class="row"><span class="lbl">− Cash purchases, expenses &amp; withdrawals</span><span>−${fmt(cashPurch + flowDailyExp + withdrawn)}</span></div>
           <div class="row"><span class="lbl">= Cash Expected</span><span>${fmt(cashExpected)}</span></div>
           <div class="row"><span class="lbl">Actual Cash at Hand</span><span>${fmt(closingCash)}</span></div>
           <div class="row"><span class="lbl">Cash Gap</span><span style="color:${Math.abs(cashGapPct)>10?'#b33a3a':(Math.abs(cashGapPct)>5?'#b06d00':'#1d7a4b')};">${fmtSigned(cashGap)} (${fmtPct(cashGapPct)})</span></div>
