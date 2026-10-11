@@ -850,6 +850,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       </div>
       <button class="btn btn-audit" style="margin-left:auto;" onclick="openAuditReport()"><i class="fas fa-magnifying-glass-chart"></i> Run full audit</button>
     </div>
+    <div id="todayChecks"></div>
     <div class="audit-summary" id="auditSummary"></div>
     <div class="section-title"><i class="fas fa-table"></i> Daily balancing records</div>
     <div class="table-card">
@@ -3186,6 +3187,40 @@ function removePurchase(idx){
 /* -----------------------------------------------------------
    DAILY BALANCING TABLE FLAGS (per-row movement)
 ----------------------------------------------------------- */
+function _ymd(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function renderTodayChecks(){
+  const el = document.getElementById('todayChecks'); if(!el) return;
+  const n = v => parseFloat(v) || 0, today = todayStr(), yd = new Date(); yd.setDate(yd.getDate() - 1); const yest = _ymd(yd);
+  const items = [], add = (sev, title, text) => items.push({sev, title, text});
+  const entries = []; Object.values(allMonthsData).forEach(m => (m.entries || []).forEach(e => entries.push(e)));
+  const days = d => (new Date(today) - new Date(d)) / 86400000;
+  allShifts.filter(x => x.date === today && x.status === 'open').forEach(x => add('amber', 'Shift still open', `${periodLabel(x.period)} shift by ${x.cashierName || x.cashier} opened ${x.openedAtTime || ''}. Make sure it is counted and closed before the cashier leaves.`));
+  allShifts.filter(x => (x.date === today || x.date === yest) && n(x.difference) < 0 && x.status === 'closed').sort((a,b) => n(a.difference) - n(b.difference)).forEach(x => add(Math.abs(n(x.difference)) >= 20000 ? 'red' : 'amber', 'Cash short: ' + (x.cashierName || x.cashier), `${x.date === today ? 'Today' : 'Yesterday'} ${periodLabel(x.period)} shift was short by UGX ${fmt(-n(x.difference))}. Ask for a recount, then check that shift's voids, credit sales and expenses.`));
+  const ys = allShifts.filter(x => x.date === yest), ye = entries.filter(e => e.date === yest);
+  if(!ys.length) add('amber', 'No shift recorded yesterday', 'If the shop was open, yesterday\'s sales and cash were not captured. If it was closed, ignore this.');
+  else {
+    const shs = ys.reduce((a,x) => a + n(x.sales), 0), des = ye.reduce((a,e) => a + n(e.sales), 0);
+    if(!ye.length) add('amber', 'Yesterday missing in Daily Performance', `Shifts recorded UGX ${fmt(shs)} in sales but there is no Daily Performance entry.`);
+    else {
+      if(shs && Math.abs(des - shs) / shs > 0.05) add('red', 'Yesterday\'s sales do not match', `Daily Performance has ${fmt(des)} but shifts total ${fmt(shs)} (gap ${fmtSigned(des - shs)}). One record is wrong or incomplete.`);
+      const ex = ys.reduce((a,x) => a + n(x.expenses), 0), dex = ye.reduce((a,e) => a + n(e.expenses), 0);
+      if(Math.abs(ex - dex) > Math.max(5000, ex * 0.1)) add('amber', 'Yesterday\'s expenses do not match', `Till expenses on shifts total ${fmt(ex)} but Daily Performance shows ${fmt(dex)}.`);
+    }
+    const vd = ys.reduce((a,x) => a + n(x.voids), 0); if(shs && vd / shs > 0.01) add('amber', 'High voids/refunds yesterday', `UGX ${fmt(vd)} (${fmtPct(vd / shs * 100)} of sales). Ask which cashier and why.`);
+  }
+  const last = weeklyClosures.length ? weeklyClosures[weeklyClosures.length - 1] : null;
+  if(!last) add('amber', 'No stock and cash count yet', 'Add a Daily Balancing entry with a physical stock count.');
+  else if(days(last.date) >= 7) add(days(last.date) >= 14 ? 'red' : 'amber', `Stock and cash not counted for ${Math.round(days(last.date))} days`, 'Do a physical count today so stock and cash can be reconciled.');
+  if(ys.length && !allPurchasesList().some(q => q.date && days(q.date) <= 3)) add('amber', 'No purchases recorded in 3 days', 'If stock was delivered, record it so the stock check stays accurate.');
+  Object.values(buildLedger(today)).forEach(r => {
+    if(r.balance < -1) add('red', 'Supplier overpaid: ' + r.name, `Payments exceed credit purchases by UGX ${fmt(-r.balance)}.`);
+    else if(r.balance > 0 && r.oldestCredit && days(r.oldestCredit) > 30 && (!r.lastPay || days(r.lastPay) > 30)) add('amber', 'Supplier unpaid 30+ days: ' + r.name, `Balance owed UGX ${fmt(r.balance)}.`);
+  });
+  items.sort((a,b) => (a.sev === 'red' ? 0 : 1) - (b.sev === 'red' ? 0 : 1));
+  el.innerHTML = '<div class="section-title"><i class="fas fa-bell"></i> Check today</div>' + (items.length
+    ? `<div style="display:grid;gap:0.7rem;margin-bottom:1.5rem;">${items.map(i => `<div class="sum-card flag-${i.sev}"><div class="sum-label">${i.sev === 'red' ? 'Investigate now' : 'Review today'}</div><div style="font-weight:700;color:#0b2b44;margin-top:0.2rem;">${i.title}</div><div style="font-size:0.82rem;color:#5f7385;margin-top:0.2rem;">${i.text}</div></div>`).join('')}</div>`
+    : `<div class="sum-card flag-green" style="margin-bottom:1.5rem;"><div class="sum-label">All clear</div><div style="font-weight:600;color:#1d6b4f;margin-top:0.2rem;">Nothing needs urgent attention in today's and yesterday's records.</div></div>`);
+}
 function computeAuditFlags(){
   const sorted = [...weeklyClosures].sort((a,b)=>new Date(a.date)-new Date(b.date));
   return sorted.map((row,i)=>{
@@ -3217,6 +3252,7 @@ function computeAuditFlags(){
   });
 }
 function renderAudit(){
+  try { renderTodayChecks(); } catch(e) { console.warn('Today checks failed', e); }
   const audit = computeAuditFlags().reverse();
   const redCount = audit.filter(a=>a.flag==='red').length, amberCount = audit.filter(a=>a.flag==='amber').length, greenCount = audit.filter(a=>a.flag==='green').length;
   const latest = weeklyClosures.length ? [...weeklyClosures].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
@@ -3894,6 +3930,59 @@ function runAuditWithRange(){
   // ============================================================
   // Verdict
   // ============================================================
+  // ---- Previous-period comparison ----
+  const lenDays = Math.round((toDate - fromDate) / 86400000) + 1;
+  const pTo = new Date(fromDate.getTime() - 86400000), pFrom = new Date(pTo.getTime() - (lenDays - 1) * 86400000);
+  const pE = []; Object.values(allMonthsData).forEach(m => (m.entries || []).forEach(e => { if(e.date && new Date(e.date) >= pFrom && new Date(e.date) <= pTo) pE.push(e); }));
+  const pSales = pE.reduce((a,e)=>a+_n(e.sales),0), pCost = pE.reduce((a,e)=>a+_n(e.cost),0), pExp = pE.reduce((a,e)=>a+_n(e.expenses),0);
+  const pProfit = pSales - pCost - pExp, cProfit = totalSales - totalCost - totalDailyExp;
+  const chg = (a,b) => b ? (a - b) / Math.abs(b) * 100 : null;
+  const sG = chg(totalSales, pSales), prG = chg(cProfit, pProfit);
+  const pM = pSales ? (pSales - pCost) / pSales * 100 : 0, cM = totalSales ? (totalSales - totalCost) / totalSales * 100 : 0;
+  let compHtml = '';
+  if(pSales > 0 && totalSales > 0){
+    const row = (l,p,c,ch,good) => `<tr><td>${l}</td><td>${p}</td><td>${c}</td><td style="font-weight:700;color:${good?'#1d7a4b':'#b33a3a'};">${ch}</td></tr>`;
+    compHtml = `<div class="report-section"><div class="report-section-header"><i class="fas fa-chart-line"></i> Compared with previous period (${pFrom.toISOString().slice(0,10)} to ${pTo.toISOString().slice(0,10)})</div><div class="report-section-body"><div class="table-scroll"><table style="min-width:520px;"><thead><tr><th>Measure</th><th>Previous</th><th>This period</th><th>Change</th></tr></thead><tbody>
+      ${row('Sales', fmt(pSales), fmt(totalSales), fmtPct(sG), sG >= 0)}${row('Gross margin', fmtPct(pM), fmtPct(cM), (cM - pM).toFixed(1) + ' pts', cM >= pM)}${row('Daily expenses', fmt(pExp), fmt(totalDailyExp), fmtPct(chg(totalDailyExp, pExp)), totalDailyExp <= pExp)}${row('Profit (sales − cost − daily expenses)', fmt(pProfit), fmt(cProfit), prG === null ? '—' : fmtPct(prG), cProfit >= pProfit)}</tbody></table></div></div></div>`;
+    const why = ` Gross margin went from ${fmtPct(pM)} to ${fmtPct(cM)}; daily expenses from ${fmt(pExp)} to ${fmt(totalDailyExp)}. Check cost entries, discounts and expenses.`;
+    if(sG >= 5 && (prG === null || prG < sG - 5)) issues[(prG !== null && prG <= 0) ? 'red' : 'amber'].push({title:'Sales up, profit not keeping pace', desc:`Sales changed <strong>${fmtPct(sG)}</strong> but profit changed <strong>${prG === null ? 'n/a' : fmtPct(prG)}</strong>.` + why});
+    else if(sG <= -5 && prG !== null && prG < sG) issues.amber.push({title:'Sales and profit both falling', desc:`Sales <strong>${fmtPct(sG)}</strong>, profit <strong>${fmtPct(prG)}</strong>.` + why});
+    else if(sG >= 5) issues.green.push({title:'Growth is turning into profit', desc:`Sales ${fmtPct(sG)}, profit ${prG === null ? 'n/a' : fmtPct(prG)}.`});
+  } else compHtml = `<div class="report-section"><div class="report-section-header"><i class="fas fa-chart-line"></i> Compared with previous period</div><div class="report-section-body">No daily entries found for ${pFrom.toISOString().slice(0,10)} to ${pTo.toISOString().slice(0,10)}, so sales and profit trends cannot be compared.</div></div>`;
+
+  // ---- Expense audit ----
+  const eItems = []; shiftsInRange.forEach(x => (x.expenseItems || []).forEach(e => eItems.push({date:x.date, who:x.cashierName || x.cashier || '?', type:e.type || '', desc:(e.description || '').trim(), amt:_n(e.amount)})));
+  const eTot = eItems.reduce((a,i)=>a+i.amt,0);
+  if(eItems.length){
+    const nd = eItems.filter(i => !i.desc);
+    if(nd.length) issues.amber.push({title:'Expenses without a description', desc:`<strong>${nd.length}</strong> expense(s) worth UGX ${fmt(nd.reduce((a,i)=>a+i.amt,0))} have no description (${[...new Set(nd.map(i=>i.who))].join(', ')}). An expense nobody can explain should be treated as cash that left the till.`});
+    const oth = eItems.filter(i => /other|misc/i.test(i.type)).reduce((a,i)=>a+i.amt,0);
+    if(eTot && oth / eTot > 0.3) issues.amber.push({title:'Too many expenses under "Other"', desc:`${fmtPct(oth / eTot * 100)} of till expenses are classed as Other. Ask staff to pick a proper category.`});
+    const seen = {}; eItems.forEach(i => { if(i.amt > 0){ const k = [i.date, i.type, i.amt].join(' · '); seen[k] = (seen[k] || 0) + 1; } });
+    const dup = Object.entries(seen).filter(([k,c]) => c > 1);
+    if(dup.length) issues.amber.push({title:'Possible duplicate expenses', desc:dup.slice(0,5).map(([k,c]) => `${k} ×${c}`).join('; ') + '. Same date, type and amount recorded more than once.'});
+    const sorted = eItems.map(i=>i.amt).sort((a,b)=>a-b), med = sorted[Math.floor(sorted.length/2)];
+    const big = eItems.filter(i => i.amt > Math.max(3 * med, 20000));
+    if(eItems.length >= 5 && big.length) issues.amber.push({title:'Unusually large expenses', desc:big.sort((a,b)=>b.amt-a.amt).slice(0,3).map(i => `${i.date} ${i.who}: ${i.type} ${fmt(i.amt)}`).join('; ') + '. Ask for the receipt.'});
+    if(shiftSalesSum && eTot / shiftSalesSum > 0.1) issues.amber.push({title:'High till expenses', desc:`Till expenses are ${fmtPct(eTot / shiftSalesSum * 100)} of shift sales.`});
+  }
+  const dm = {}; shiftsInRange.forEach(x => { dm[x.date] = dm[x.date] || {t:0,d:0,h:false}; dm[x.date].t += _n(x.expenses); });
+  allEntries.forEach(e => { if(dm[e.date]){ dm[e.date].d += _n(e.expenses); dm[e.date].h = true; } });
+  const dBad = Object.entries(dm).filter(([d,v]) => v.h && Math.abs(v.t - v.d) > Math.max(5000, v.t * 0.1));
+  if(dBad.length) issues[dBad.length >= 3 ? 'red' : 'amber'].push({title:'Till expenses ≠ Daily Performance expenses', desc:`${dBad.length} day(s) differ: ${dBad.slice(0,5).map(([d,v]) => `${d} (shifts ${fmt(v.t)} vs daily ${fmt(v.d)})`).join('; ')}.`});
+
+  // ---- Cashier / period league tables ----
+  const agg = keyFn => { const m = {}; shiftsInRange.forEach(x => { const k = keyFn(x), r = m[k] = m[k] || {k,n:0,sales:0,short:0,extra:0,neg:0,voids:0,exp:0}; r.n++; r.sales += _n(x.sales); const d = _n(x.difference); if(d < 0){ r.short += -d; r.neg++; } else r.extra += d; r.voids += _n(x.voids); r.exp += _n(x.expenses); }); return Object.values(m).sort((a,b) => (b.short - b.extra) - (a.short - a.extra)); };
+  const byC = agg(x => x.cashierName || x.cashier || '?'), byP = agg(x => periodLabel(x.period));
+  const tbl = (title, icon, rows, label) => `<div class="report-section"><div class="report-section-header"><i class="fas ${icon}"></i> ${title}</div><div class="report-section-body"><div class="table-scroll"><table style="min-width:640px;"><thead><tr><th>${label}</th><th>Shifts</th><th>Sales</th><th>Short</th><th>Extra</th><th>Net</th><th>Short in</th><th>Short % of sales</th><th>Voids</th></tr></thead><tbody>${rows.map(r => { const net = r.extra - r.short, pc = r.sales ? r.short / r.sales * 100 : 0; return `<tr style="${pc > 0.5 ? 'background:#fef5f5;' : ''}"><td><strong>${r.k}</strong></td><td>${r.n}</td><td>${fmt(r.sales)}</td><td style="color:#b33a3a;">${fmt(r.short)}</td><td style="color:#1d7a4b;">${fmt(r.extra)}</td><td style="font-weight:700;color:${net < 0 ? '#b33a3a' : '#1d7a4b'};">${fmtSigned(net)}</td><td>${r.neg} of ${r.n}</td><td>${fmtPct(pc)}</td><td>${fmt(r.voids)}</td></tr>`; }).join('') || '<tr><td colspan="9" style="padding:1rem;">No shifts in this range.</td></tr>'}</tbody></table></div></div></div>`;
+  const worst = shiftsInRange.filter(x => _n(x.difference) < 0).sort((a,b) => _n(a.difference) - _n(b.difference)).slice(0,5);
+  const worstHtml = worst.length ? `<div class="report-section"><div class="report-section-header"><i class="fas fa-triangle-exclamation"></i> Worst shifts to investigate first</div><div class="report-section-body"><div class="table-scroll"><table style="min-width:520px;"><thead><tr><th>Date</th><th>Shift</th><th>Cashier</th><th>Short by</th><th>Voids</th><th>Note</th></tr></thead><tbody>${worst.map(x => `<tr><td>${x.date}</td><td>${periodLabel(x.period)}</td><td>${x.cashierName || x.cashier || '?'}</td><td style="font-weight:700;color:#b33a3a;">${fmt(-_n(x.difference))}</td><td>${fmt(_n(x.voids))}</td><td>${x.note || ''}</td></tr>`).join('')}</tbody></table></div></div></div>` : '';
+  const totShort = byC.reduce((a,r)=>a+r.short,0), totSales2 = byC.reduce((a,r)=>a+r.sales,0), totExp2 = byC.reduce((a,r)=>a+r.exp,0);
+  const topP = byP.slice().sort((a,b)=>b.short-a.short)[0];
+  if(topP && totShort > 20000 && topP.short / totShort > 0.6 && byP.length > 1) issues.amber.push({title:'Shortages concentrated in the ' + topP.k + ' shifts', desc:`${fmtPct(topP.short / totShort * 100)} of all shortages (${fmt(topP.short)}) happen in ${topP.k} shifts. Look at who works them and what happens at that time.`});
+  byC.forEach(r => { if(r.n >= 3 && totSales2 && totExp2 && r.sales && (r.exp / r.sales) > 2 * (totExp2 / totSales2)) issues.amber.push({title:'High expenses on ' + r.k + '\'s shifts', desc:`Expenses are ${fmtPct(r.exp / r.sales * 100)} of this cashier's sales, more than double the shop average (${fmtPct(totExp2 / totSales2 * 100)}).`}); });
+  const extraHtml = compHtml + worstHtml + tbl('Cashier league table (worst first)', 'fa-user-clock', byC, 'Cashier') + tbl('Shift period comparison', 'fa-clock', byP, 'Period');
+
   let verdictClass, verdictIcon, verdictTitle, verdictSub;
   if(allEntries.length === 0 && allClosures.length === 0){
     verdictClass='warn'; verdictIcon='fa-info-circle'; verdictTitle='No data in this range'; verdictSub='No daily entries or balancing records.';
@@ -3978,7 +4067,7 @@ function runAuditWithRange(){
     <div class="row"><span class="lbl">Shift net difference</span><span style="color:${shiftNet>0?'#1d7a4b':(shiftNet<0?'#b33a3a':'#5f7385')};">${fmtSigned(shiftNet)}</span></div>
   </div></div></div>`;
 
-  container.innerHTML = verdictBanner + scoreGrid + rangeInfo + formulasHtml + kpiHtml + reconHtml + issuesHtml;
+  container.innerHTML = verdictBanner + scoreGrid + rangeInfo + extraHtml + formulasHtml + kpiHtml + reconHtml + issuesHtml;
 }
 document.getElementById('auditModal').addEventListener('click', function(e){ if(e.target===this) closeAuditReport(); });
 document.getElementById('shiftSummaryModal').addEventListener('click', function(e){ if(e.target===this) closeShiftSummary(); });
