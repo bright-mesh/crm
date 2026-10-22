@@ -2955,6 +2955,12 @@ function renderAll(){
   document.querySelectorAll('#tableBody input').forEach(inp=>{ if(!canEdit){ inp.setAttribute('readonly',true); inp.style.background='#f2f6fa'; } else { inp.removeAttribute('readonly'); inp.style.background='white'; } });
   renderTable(); renderExpenseRows(); renderSummary(); renderTotals(); renderClosedList();
 }
+function dayName(dateStr){
+  if(!dateStr) return '';
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  if(!y || !m || !d) return '';
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { weekday: 'long' });
+}
 function renderTable(){
   const tbody = document.getElementById('tableBody'); if(!tbody) return;
   const entries = currentEntries();
@@ -2965,7 +2971,7 @@ function renderTable(){
     const gp = grossProfit(row);
     const ro = !canEdit ? 'readonly' : ''; const bg = !canEdit ? 'background:#f2f6fa;' : '';
     return `<tr>
-      <td><input type="text" value="${row.day||''}" ${ro} onchange="updateField(${idx},'day',this.value)" style="${bg}"></td>
+      <td><input type="text" value="${dayName(row.date)||row.day||''}" readonly tabindex="-1" title="Generated automatically from the date" style="background:#f2f6fa;font-weight:600;color:#0b2b44;cursor:default;"></td>
       <td><input type="date" value="${row.date||''}" ${ro} onchange="updateField(${idx},'date',this.value)" style="${bg}"></td>
       <td><input type="number" step="0.01" value="${row.cost??''}" ${ro} onchange="updateField(${idx},'cost',this.value)" style="color:#b33a3a;${bg}"></td>
       <td><input type="number" step="0.01" value="${row.sales??''}" ${ro} onchange="updateField(${idx},'sales',this.value)" style="color:#1d7a4b;${bg}"></td>
@@ -3027,6 +3033,7 @@ function updateField(idx,field,value){
   if(allMonthsData[currentMonthKey]?.closed) return;
   const entries = currentEntries();
   if(field==='cost'||field==='sales'||field==='expenses') entries[idx][field] = value===''?0:parseFloat(value); else entries[idx][field] = value;
+  if(field === 'date') entries[idx].day = dayName(value);
   renderTable(); renderSummary(); renderTotals(); scheduleSave();
 }
 function addRow(){
@@ -3034,7 +3041,7 @@ function addRow(){
   if(allMonthsData[currentMonthKey]?.closed){ showToast('Month is closed'); return; }
   const entries = currentEntries(); const last = entries[entries.length-1];
   let newDate = ''; if(last && last.date){ const d = new Date(last.date); d.setDate(d.getDate()+1); newDate = d.toISOString().split('T')[0]; } else newDate = currentMonthKey + '-01';
-  entries.push({day:'',date:newDate,cost:0,sales:0,expenses:0});
+  entries.push({day:dayName(newDate),date:newDate,cost:0,sales:0,expenses:0});
   renderTable(); renderSummary(); renderTotals(); scheduleSave();
 }
 function removeRow(idx){
@@ -4080,7 +4087,7 @@ function downloadExcel(){
   const wb = XLSX.utils.book_new();
   const entries = currentEntries(); const exp = currentExpenses(); const purchases = currentPurchases();
   if(entries.length){
-    const dailyRows = entries.map((r,i)=>({'#':i+1,'Day':r.day||'','Date':r.date||'','Total Cost':parseFloat(r.cost)||0,'Total Sales':parseFloat(r.sales)||0,'Expenses':parseFloat(r.expenses)||0,'Gross Profit':grossProfit(r)}));
+    const dailyRows = entries.map((r,i)=>({'#':i+1,'Day':dayName(r.date)||r.day||'','Date':r.date||'','Total Cost':parseFloat(r.cost)||0,'Total Sales':parseFloat(r.sales)||0,'Expenses':parseFloat(r.expenses)||0,'Gross Profit':grossProfit(r)}));
     const ts = entries.reduce((s,r)=>s+(parseFloat(r.sales)||0),0); const tc = entries.reduce((s,r)=>s+(parseFloat(r.cost)||0),0); const te = entries.reduce((s,r)=>s+(parseFloat(r.expenses)||0),0);
     dailyRows.push({'#':'','Day':'TOTAL','Date':'','Total Cost':tc,'Total Sales':ts,'Expenses':te,'Gross Profit':ts-tc-te});
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dailyRows), 'Daily Data');
