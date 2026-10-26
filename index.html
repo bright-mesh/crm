@@ -895,9 +895,13 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <select id="shiftMonthFilter" onchange="renderShifts()" style="padding:0.5rem 0.8rem;border-radius:10px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.82rem;">
           <option value="">All months</option>
         </select>
+        <select id="shiftEmpFilter" onchange="renderShifts()" style="padding:0.5rem 0.8rem;border-radius:10px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.82rem;">
+          <option value="">All employees</option>
+        </select>
         <button class="btn manager-only" onclick="closeAllShiftsForMonth()"><i class="fas fa-lock"></i> Close all shifts for month</button>
       </div>
     </div>
+    <div id="shiftEmpResult"></div>
     <div class="summary-grid" id="shiftSummaryGrid"></div>
     <div class="section-title"><i class="fas fa-list"></i> All shift closures</div>
     <div class="table-card">
@@ -2106,7 +2110,14 @@ function renderShifts(){
     Array.from(months).sort().reverse().forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = monthLabel(m); sel.appendChild(o); });
   }
   const monthFilter = sel ? sel.value : '';
-  const filtered = allShifts.filter(s => !monthFilter || (s.date && s.date.slice(0,7) === monthFilter));
+  const empSel = document.getElementById('shiftEmpFilter');
+  if(empSel){
+    const cur = empSel.value, names = [...new Set(allShifts.map(s => s.cashierName || s.cashier).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+    empSel.innerHTML = '<option value="">All employees</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+    if(names.includes(cur)) empSel.value = cur;
+  }
+  const empFilter = empSel ? empSel.value : '';
+  const filtered = allShifts.filter(s => (!monthFilter || (s.date && s.date.slice(0,7) === monthFilter)) && (!empFilter || (s.cashierName || s.cashier) === empFilter));
 
   const totalExtra = filtered.filter(s => (parseFloat(s.difference) || 0) > 0).reduce((sum, s) => sum + (parseFloat(s.difference) || 0), 0);
   const totalLoss = filtered.filter(s => (parseFloat(s.difference) || 0) < 0).reduce((sum, s) => sum + Math.abs(parseFloat(s.difference) || 0), 0);
@@ -2121,6 +2132,19 @@ function renderShifts(){
     <div class="sum-card ${netDiff >= 0 ? 'flag-green' : 'flag-red'}"><div class="sum-label"><i class="fas fa-scale-balanced"></i> Net difference</div><div class="sum-value ${netDiff >= 0 ? 'positive' : 'negative'}">${fmtSigned(netDiff)}</div><div class="sum-sub">Across shown shifts</div></div>
   `;
 
+  if(grid) grid.style.display = empFilter ? 'none' : '';
+  const resBox = document.getElementById('shiftEmpResult');
+  if(resBox){
+    const shortCount = filtered.filter(s => (parseFloat(s.difference) || 0) < 0).length;
+    resBox.innerHTML = empFilter ? `<div class="section-title"><i class="fas fa-user-check"></i> ${empFilter}: ${monthFilter ? monthLabel(monthFilter) : 'all months'}</div>
+      <div class="summary-grid">
+        <div class="sum-card"><div class="sum-label"><i class="fas fa-clock"></i> Shifts</div><div class="sum-value">${filtered.length}</div><div class="sum-sub">${shortCount} short</div></div>
+        <div class="sum-card"><div class="sum-label"><i class="fas fa-coins"></i> Total Sales</div><div class="sum-value">${fmt(totalSales)}</div><div class="sum-sub">UGX</div></div>
+        <div class="sum-card flag-red"><div class="sum-label"><i class="fas fa-arrow-down"></i> Total Short</div><div class="sum-value negative">${fmt(totalLoss)}</div><div class="sum-sub">${totalSales ? fmtPct(totalLoss / totalSales * 100) : '0%'} of sales</div></div>
+        <div class="sum-card flag-green"><div class="sum-label"><i class="fas fa-arrow-up"></i> Total Extra</div><div class="sum-value positive">${fmt(totalExtra)}</div><div class="sum-sub">Cash above expected</div></div>
+        <div class="sum-card ${netDiff >= 0 ? 'flag-green' : 'flag-red'}"><div class="sum-label"><i class="fas fa-scale-balanced"></i> Net</div><div class="sum-value ${netDiff >= 0 ? 'positive' : 'negative'}">${fmtSigned(netDiff)}</div><div class="sum-sub">Extra minus short</div></div>
+      </div>` : '';
+  }
   const tbody = document.getElementById('shiftBody');
   if(!tbody) return;
   if(!filtered.length){ tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:2rem;color:#7b8fa0;">No shift closures recorded yet.</td></tr>'; return; }
