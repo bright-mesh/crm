@@ -842,6 +842,12 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 
   <!-- DAILY BALANCING -->
   <div class="tab-panel" id="tab-audit">
+    <div class="month-bar">
+      <label><i class="fas fa-calendar-alt"></i> Active month:</label>
+      <select id="auditMonthSelect" onchange="onAuditMonthChange()"></select>
+      <span id="auditClosedStatus" style="font-size:0.8rem;color:#1d7a4b;font-weight:600;"></span>
+    </div>
+    <div id="auditClosedBanner" style="display:none;background:#fce8e8;color:#b33a3a;border:1px solid #f1c4c4;border-radius:12px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.85rem;font-weight:600;"></div>
     <div style="background:white;padding:1.2rem 1.5rem;border-radius:16px;border:1px solid #e3ebf3;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <i class="fas fa-scale-balanced" style="font-size:1.8rem;color:#1d7a4b;"></i>
       <div>
@@ -868,8 +874,8 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <div class="legend-item"><span class="legend-dot green"></span> <strong>Green</strong></div>
       </div>
     </div>
-    <div class="section-title editor-only"><i class="fas fa-plus-circle"></i> Add daily balancing entry</div>
-    <div class="table-card editor-only" style="padding:1.2rem;">
+    <div class="section-title editor-only" id="auditAddTitle"><i class="fas fa-plus-circle"></i> Add daily balancing entry</div>
+    <div class="table-card editor-only" id="auditAddCard" style="padding:1.2rem;">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Date</label><input type="date" id="newClosureDate" style="margin-top:0.3rem;"></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Stock Cost (UGX)</label><input type="number" id="newClosureStock" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Cost value of stock on hand</div></div>
@@ -2959,12 +2965,24 @@ function switchTab(tab){
 
 /* RENDERS */
 function renderMonthSelect(){
+  renderAuditMonthSelect();
   const sel = document.getElementById('monthSelect'); if(!sel) return;
   const months = Object.keys(allMonthsData).sort();
   if(!months.length){ sel.innerHTML = '<option>No data yet</option>'; return; }
   sel.innerHTML = months.map(m => { const closed = allMonthsData[m].closed ? ' ✓' : ''; return `<option value="${m}" ${m===currentMonthKey?'selected':''}>${monthLabel(m)}${closed}</option>`; }).join('');
 }
+function renderAuditMonthSelect(){
+  const sel = document.getElementById('auditMonthSelect'); if(!sel) return;
+  const months = Object.keys(allMonthsData).sort();
+  if(!months.length){ sel.innerHTML = '<option>No data yet</option>'; return; }
+  sel.innerHTML = months.map(m => { const closed = allMonthsData[m].closed ? ' ✓' : ''; return `<option value="${m}" ${m===currentMonthKey?'selected':''}>${monthLabel(m)}${closed}</option>`; }).join('');
+}
+function isBalancingMonthClosed(dateStr){
+  const mk = String(dateStr||'').slice(0,7);
+  return !!(allMonthsData[mk] && allMonthsData[mk].closed);
+}
 function renderPurchaseMonthSelect(){
+  renderAuditMonthSelect();
   const sel = document.getElementById('purchaseMonthSelect'); if(!sel) return;
   const months = Object.keys(allMonthsData).sort();
   if(!months.length){ sel.innerHTML = '<option>No data yet</option>'; return; }
@@ -2978,6 +2996,7 @@ function renderAll(){
   const canEdit = hasPerm('editDaily') && !isClosed;
   document.querySelectorAll('#tableBody input').forEach(inp=>{ if(!canEdit){ inp.setAttribute('readonly',true); inp.style.background='#f2f6fa'; } else { inp.removeAttribute('readonly'); inp.style.background='white'; } });
   renderTable(); renderExpenseRows(); renderSummary(); renderTotals(); renderClosedList();
+  try { renderAudit(); } catch(e) { console.warn('Balancing render failed', e); }
 }
 function dayName(dateStr){
   if(!dateStr) return '';
@@ -3119,9 +3138,11 @@ function renderClosedList(){
   const el = document.getElementById('closedList'); if(!el) return;
   el.innerHTML = closed.map(m=>`<span onclick="selectMonth('${m}')">${shortMonth(m)}</span>`).join('') || '<span style="color:#7b8fa0;">None yet</span>';
 }
-function selectMonth(m){ currentMonthKey = m; document.getElementById('monthSelect').value = m; document.getElementById('purchaseMonthSelect').value = m; renderAll(); renderPurchases(); }
-function onMonthChange(){ currentMonthKey = document.getElementById('monthSelect').value; document.getElementById('purchaseMonthSelect').value = currentMonthKey; renderAll(); renderPurchases(); }
-function onPurchaseMonthChange(){ currentMonthKey = document.getElementById('purchaseMonthSelect').value; document.getElementById('monthSelect').value = currentMonthKey; renderAll(); renderPurchases(); }
+function syncMonthSelects(){ ['monthSelect','purchaseMonthSelect','auditMonthSelect'].forEach(id => { const el = document.getElementById(id); if(el) el.value = currentMonthKey; }); }
+function selectMonth(m){ currentMonthKey = m; syncMonthSelects(); renderAll(); renderPurchases(); }
+function onMonthChange(){ currentMonthKey = document.getElementById('monthSelect').value; syncMonthSelects(); renderAll(); renderPurchases(); }
+function onPurchaseMonthChange(){ currentMonthKey = document.getElementById('purchaseMonthSelect').value; syncMonthSelects(); renderAll(); renderPurchases(); }
+function onAuditMonthChange(){ currentMonthKey = document.getElementById('auditMonthSelect').value; syncMonthSelects(); renderAll(); renderPurchases(); }
 function renderSummary(){
   const entries = currentEntries(); const exp = currentExpenses();
   const totalSales = entries.reduce((s,r)=>s+(parseFloat(r.sales)||0),0);
@@ -3284,9 +3305,20 @@ function computeAuditFlags(){
 }
 function renderAudit(){
   try { renderTodayChecks(); } catch(e) { console.warn('Today checks failed', e); }
-  const audit = computeAuditFlags().reverse();
+  const monthIsClosed = !!(allMonthsData[currentMonthKey] && allMonthsData[currentMonthKey].closed);
+  const audit = computeAuditFlags().filter(r => String(r.date||'').slice(0,7) === currentMonthKey).reverse();
+  const stEl = document.getElementById('auditClosedStatus');
+  if(stEl){ stEl.innerHTML = monthIsClosed ? '<i class="fas fa-lock"></i> Closed' : '<i class="fas fa-lock-open"></i> Open'; stEl.style.color = monthIsClosed ? '#b33a3a' : '#1d7a4b'; }
+  const bnEl = document.getElementById('auditClosedBanner');
+  if(bnEl){ bnEl.style.display = monthIsClosed ? 'block' : 'none'; bnEl.innerHTML = `<i class="fas fa-lock"></i> ${currentMonthKey ? monthLabel(currentMonthKey) : 'This month'} is closed — daily balancing records are locked. A manager can re-open the month from Month History.`; }
+  const addTitle = document.getElementById('auditAddTitle'), addCard = document.getElementById('auditAddCard');
+  if(addTitle) addTitle.style.display = monthIsClosed ? 'none' : '';
+  if(addCard) addCard.style.display = monthIsClosed ? 'none' : '';
+  const dIn = document.getElementById('newClosureDate');
+  if(dIn && currentMonthKey){ const [yy,mm] = currentMonthKey.split('-').map(Number); const last = new Date(yy, mm, 0).getDate(); dIn.min = currentMonthKey + '-01'; dIn.max = currentMonthKey + '-' + String(last).padStart(2,'0'); }
   const redCount = audit.filter(a=>a.flag==='red').length, amberCount = audit.filter(a=>a.flag==='amber').length, greenCount = audit.filter(a=>a.flag==='green').length;
-  const latest = weeklyClosures.length ? [...weeklyClosures].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
+  const monthClosures = weeklyClosures.filter(w => String(w.date||'').slice(0,7) === currentMonthKey);
+  const latest = monthClosures.length ? [...monthClosures].sort((a,b)=>new Date(b.date)-new Date(a.date))[0] : null;
   const sumEl = document.getElementById('auditSummary');
   if(sumEl) sumEl.innerHTML = `
     <div class="audit-card ${redCount>0?'red':'green'}"><div class="label"><i class="fas fa-flag"></i> Red flags</div><div class="value">${redCount}</div><div class="detail">Critical</div></div>
@@ -3295,14 +3327,14 @@ function renderAudit(){
     <div class="audit-card ${latest && (latest.stockCost||latest.stock||0)===0?'amber':'green'}"><div class="label"><i class="fas fa-boxes-stacked"></i> Latest stock cost</div><div class="value">${latest?fmt(latest.stockCost||latest.stock||0):'—'}</div><div class="detail">${latest?new Date(latest.date).toLocaleDateString():'No data'}</div></div>
   `;
   const tbody = document.getElementById('auditBody'); if(!tbody) return;
-  if(!audit.length){ tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:#7b8fa0;">No daily balancing records yet.</td></tr>`; return; }
+  if(!audit.length){ tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:#7b8fa0;">No daily balancing records for ${currentMonthKey ? monthLabel(currentMonthKey) : 'this month'}.</td></tr>`; return; }
   tbody.innerHTML = audit.map((row,i)=>{
     const rowClass = row.flag==='red'?'red-flag-row':row.flag==='amber'?'amber-flag-row':'';
     const badge = row.flag==='red'?`<span class="flag-badge red"><i class="fas fa-flag"></i> RED</span>`:row.flag==='amber'?`<span class="flag-badge amber"><i class="fas fa-exclamation-triangle"></i> AMBER</span>`:`<span class="flag-badge green"><i class="fas fa-check"></i> OK</span>`;
     const scd = row.stockCostDelta!==null?`<span style="color:${row.stockCostDelta<0?'#b33a3a':'#1d7a4b'};font-weight:600;">${fmtSigned(row.stockCostDelta)}</span>`:'—';
     const cd = row.creditDelta!==null?`<span style="color:${row.creditDelta<0?'#b33a3a':'#1d7a4b'};font-weight:600;">${fmtSigned(row.creditDelta)}</span>`:'—';
     const cad = row.cashDelta!==null?`<span style="color:${row.cashDelta<0?'#b33a3a':'#1d7a4b'};font-weight:600;">${fmtSigned(row.cashDelta)}</span>`:'—';
-    const canManage = hasPerm('manageUsers') || hasPerm('manageDailyBalancing');
+    const canManage = (hasPerm('manageUsers') || hasPerm('manageDailyBalancing')) && !monthIsClosed;
     const actionBtns = canManage ? `
       <button class="btn" style="padding:0.3rem 0.55rem;font-size:0.65rem;margin-right:0.15rem;" onclick="editDailyBalancing('${row.date}')" title="Edit"><i class="fas fa-edit"></i></button>
       <button class="btn btn-danger" style="padding:0.3rem 0.55rem;font-size:0.65rem;" onclick="deleteDailyBalancing('${row.date}')" title="Delete"><i class="fas fa-trash"></i></button>
@@ -3314,6 +3346,7 @@ function renderAudit(){
 /* DAILY BALANCING — edit / delete */
 async function editDailyBalancing(dateStr){
   if(!hasPerm('manageUsers') && !hasPerm('manageDailyBalancing')){ showToast('You do not have permission to edit daily balancing records', 'error'); return; }
+  if(isBalancingMonthClosed(dateStr)){ showToast('Month is closed', 'error'); return; }
   const rec = weeklyClosures.find(w => w.date === dateStr);
   if(!rec){ showToast('Record not found', 'error'); return; }
   const newStockCost = prompt('Total Stock Cost (UGX):', rec.stockCost ?? rec.stock ?? 0); if(newStockCost === null) return;
@@ -3336,6 +3369,7 @@ async function editDailyBalancing(dateStr){
 }
 async function deleteDailyBalancing(dateStr){
   if(!hasPerm('manageUsers') && !hasPerm('manageDailyBalancing')){ showToast('You do not have permission to delete daily balancing records', 'error'); return; }
+  if(isBalancingMonthClosed(dateStr)){ showToast('Month is closed', 'error'); return; }
   const rec = weeklyClosures.find(w => w.date === dateStr);
   if(!rec){ showToast('Record not found', 'error'); return; }
   if(!confirm(`Delete daily balancing record for ${dateStr}?\n\nStock Cost: ${fmt(rec.stockCost||rec.stock||0)}\nStock Price: ${fmt(rec.stockPrice||0)}\nCredit: ${fmt(rec.credit)}\nCash: ${fmt(rec.cash)}\n\nThis cannot be undone.`)) return;
@@ -3356,6 +3390,7 @@ async function addClosureEntry(){
   let cash = parseFloat(document.getElementById('newClosureCash').value);
   if(isNaN(cash)){ showToast('Enter the cash you counted at hand. It is no longer auto-filled, so the audit can compare it with the shift counts.', 'error'); return; }
   if(!date){ showToast('Please enter a date', 'error'); return; }
+  if(isBalancingMonthClosed(date)){ showToast('Month is closed — balancing records for ' + monthLabel(date.slice(0,7)) + ' are locked', 'error'); return; }
   const closure = {date, stockCost, stockPrice, stock: stockCost, credit, cash, out: parseFloat(document.getElementById('newClosureOut').value)||0, src: document.getElementById('newClosureSrc').value};
   const existing = weeklyClosures.find(w => w.date === date);
   if(existing) Object.assign(existing, closure); else weeklyClosures.push(closure);
@@ -3422,6 +3457,7 @@ function viewHistoryMonth(mKey){
   currentMonthKey = mKey;
   document.getElementById('monthSelect').value = mKey;
   document.getElementById('purchaseMonthSelect').value = mKey;
+  syncMonthSelects();
   renderAll(); renderPurchases();
   switchTab('daily');
   showToast('Viewing ' + monthLabel(mKey), 'success');
