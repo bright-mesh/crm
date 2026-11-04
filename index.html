@@ -1262,7 +1262,7 @@ try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebas
 /* CONSTANTS */
 const EXPENSE_TYPES = ['Salary','Rent','Utilities (Electricity/Water)','Transport','Fuel','Packaging Materials','Cleaning Supplies','Security Services','Wifi / Internet','Telephone / Airtime','Waste Disposal','Licenses & Permits','Insurance','Marketing & Advertising','Repairs & Maintenance','Bank Charges','Loan Repayment','Taxes','Staff Welfare','Loss / Theft','Other'];
 const CLOSURE_EXPENSE_TYPES = ['Transport','Fuel','Packaging','Cleaning','Airtime','Waste','Repairs','Staff Welfare','Security','Electricity','Water','Other'];
-const LOCATION_SUBCOLLECTIONS = ['months','weeklyClosures','auditLog','shifts','suppliers','supplierPayments','monthHistory'];
+const LOCATION_SUBCOLLECTIONS = ['months','entries','purchases','weeklyClosures','auditLog','shifts','suppliers','supplierPayments','monthHistory'];
 
 const PERIOD_DEFS = {
   morning:   { label: 'Morning',   icon: 'fa-sun',       start: 0,  end: 12 },
@@ -1358,6 +1358,7 @@ function currentPurchases(){
   return allMonthsData[currentMonthKey].purchases;
 }
 function grossProfit(row){const c=parseFloat(row.cost)||0,s=parseFloat(row.sales)||0,e=parseFloat(row.expenses)||0;return s-c-e;}
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fmt(n){if(n===undefined||n===null||isNaN(n))return '0';return Number(n).toLocaleString('en-UG',{maximumFractionDigits:0});}
 function fmtSigned(n){if(n===undefined||n===null||isNaN(n))return '—';const a=Math.abs(n).toLocaleString('en-UG',{maximumFractionDigits:0});return (n>=0?'+':'−')+a;}
 function fmtPct(n){if(n===undefined||n===null||isNaN(n))return '—';return n.toFixed(1)+'%';}
@@ -1485,7 +1486,7 @@ async function autoSeed() {
     await db.collection('locations').doc('wamombl1').set({ name: 'Wamo Mbale 1', code: 'wamombl1', createdAt: new Date().toISOString(), status: 'active', rolePermissions: {} });
     await db.collection('users').doc('wamombl1').set({ username:'wamombl1', fullName:'Ahmed', password:'wamo123@', locationId:'wamombl1', role:'manager', permissions: DEFAULT_PERMISSIONS.manager, status:'active', createdAt: new Date().toISOString() });
     const curKey = currentCalendarMonthKey();
-    await db.collection('locations').doc('wamombl1').collection('months').doc(curKey).set({ entries: [], expenses: [], closed: false, purchases: [] });
+    await db.collection('locations').doc('wamombl1').collection('months').doc(curKey).set({ expenses: [], closed: false, schema: 2 });
     const seedSuppliers = ['Mukwano Distributors','Bidco Uganda','Kakira Sugar','Fresh Foods Ltd'];
     for(const s of seedSuppliers) await db.collection('locations').doc('wamombl1').collection('suppliers').doc(s).set({ name: s, createdAt: new Date().toISOString() });
   } catch(e) { console.error('Auto-seed failed', e); }
@@ -1502,7 +1503,7 @@ async function autoClosePastMonths(){
     if(!m || m.closed) continue;
     try {
       m.closed = true; m.closedAt = new Date().toISOString(); m.closedBy = 'auto';
-      await db.collection('locations').doc(currentLocationId).collection('months').doc(mKey).set(m);
+      await saveMonthToFirestore(mKey);
       const totalSales = (m.entries||[]).reduce((s,r)=>s+(parseFloat(r.sales)||0),0);
       const totalCost = (m.entries||[]).reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
       const totalDailyExp = (m.entries||[]).reduce((s,r)=>s+(parseFloat(r.expenses)||0),0);
@@ -1552,6 +1553,167 @@ async function backfillShiftPeriods(){
   if(changed) console.log(`[Backfill Period] Tagged ${changed} legacy shift(s).`);
 }
 
+/* ============================================================
+   PER-ROW PERSISTENCE
+   months/{YYYY-MM}            -> small metadata (expenses, closed flags, schema:2)
+   entries/{rowId}, purchases/{rowId} (under the location)
+                               -> one document per row, tagged with month
+   Saves write only the rows/fields that changed, so two people editing at
+   the same time no longer overwrite each other, and a month can grow
+   without approaching the 1 MB document limit.
+============================================================ */
+const ROW_COLLECTIONS = ['entries','purchases'];
+let _rowSnap = { entries:{}, purchases:{} };   // collection -> monthKey -> { rowId: stored row }
+let _metaSnap = {};                             // monthKey -> stored month metadata
+let _saveChain = Promise.resolve();
+let _pendingSaves = 0, _saveScheduled = false;
+let _seqCounter = 0;
+function _clean(o){ return JSON.parse(JSON.stringify(o)); }
+function _newRowId(){ return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function _newSeq(){ return Date.now() * 1000 + (_seqCounter++ % 1000); }
+function _legacyId(i){ return 'L' + String(i).padStart(5, '0'); }
+function _diffFields(oldObj, newObj){
+  const changed = {}, removed = [];
+  Object.keys(newObj).forEach(k => { if(JSON.stringify(newObj[k]) !== JSON.stringify(oldObj ? oldObj[k] : undefined)) changed[k] = newObj[k]; });
+  if(oldObj) Object.keys(oldObj).forEach(k => { if(!(k in newObj)) removed.push(k); });
+  return { changed, removed };
+}
+function _fieldDelete(){ return firebase.firestore.FieldValue.delete(); }
+
+async function _loadRowsByMonth(locationId){
+  const ref = db.collection('locations').doc(locationId);
+  const [eSnap, pSnap] = await Promise.all([ref.collection('entries').get(), ref.collection('purchases').get()]);
+  const out = { entries:{}, purchases:{} };
+  [['entries', eSnap], ['purchases', pSnap]].forEach(([coll, snap]) => snap.forEach(d => {
+    const r = d.data(); if(!r || !r.month) return;
+    (out[coll][r.month] = out[coll][r.month] || []).push({ ...r, id: d.id });
+  }));
+  ROW_COLLECTIONS.forEach(coll => Object.values(out[coll]).forEach(list => list.sort((a, b) => (a.seq || 0) - (b.seq || 0))));
+  return out;
+}
+/* Builds the in-memory month (same shape the rest of the app already uses). */
+function _assembleMonth(mKey, data, rowsByMonth){
+  const m = { ...data }; delete m.entries; delete m.purchases;
+  if(m.expenses === undefined) m.expenses = [];
+  if(m.closed === undefined) m.closed = false;
+  const legacy = data.schema !== 2 && (Array.isArray(data.entries) || Array.isArray(data.purchases));
+  const snap = { entries:{}, purchases:{} }, legacyWrites = [];
+  ROW_COLLECTIONS.forEach(coll => {
+    const raw = rowsByMonth[coll][mKey] || [];
+    raw.forEach(r => { snap[coll][r.id] = _clean(r); });
+    const rows = raw.map(r => { const x = { ...r }; delete x.month; return x; });
+    if(legacy){
+      const have = new Set(raw.map(r => r.id));
+      (data[coll] || []).forEach((r, i) => {
+        const id = _legacyId(i); if(have.has(id)) return;
+        const row = { ..._clean(r), id, seq: i };
+        rows.push(row); legacyWrites.push({ coll, id, row });
+      });
+      rows.sort((a, b) => (a.seq || 0) - (b.seq || 0));
+    }
+    m[coll] = rows;
+  });
+  const meta = _clean(m); delete meta.entries; delete meta.purchases;
+  return { m, snap, meta, legacy, legacyWrites };
+}
+/* One-time upgrade of a month stored the old way (arrays inside the month document). */
+async function _migrateLegacyMonth(locationId, mKey, a, data){
+  const ref = db.collection('locations').doc(locationId);
+  try {
+    for(let i = 0; i < a.legacyWrites.length; i += 400){
+      const batch = db.batch();
+      a.legacyWrites.slice(i, i + 400).forEach(w => { const payload = _clean(w.row); payload.month = mKey; batch.set(ref.collection(w.coll).doc(w.id), payload); });
+      await batch.commit();
+    }
+    for(const coll of ROW_COLLECTIONS){            // verify every old row now exists before removing the old arrays
+      const need = (data[coll] || []).length; if(!need) continue;
+      const chk = await ref.collection(coll).where('month', '==', mKey).get();
+      const ids = new Set(); chk.forEach(d => ids.add(d.id));
+      for(let i = 0; i < need; i++) if(!ids.has(_legacyId(i))) throw new Error('Verification failed for ' + coll + ' ' + mKey);
+    }
+    await ref.collection('months').doc(mKey).set({ schema: 2, entries: _fieldDelete(), purchases: _fieldDelete() }, { merge: true });
+    a.m.schema = 2;
+    _metaSnap[mKey] = { ...a.meta, schema: 2 };
+    a.legacyWrites.forEach(w => { const payload = _clean(w.row); payload.month = mKey; (_rowSnap[w.coll][mKey] = _rowSnap[w.coll][mKey] || {})[w.id] = payload; });
+    return true;
+  } catch(e) {
+    console.error('[Migrate] ' + mKey, e);
+    showToast('Could not upgrade ' + mKey + ' to the new storage format. Nothing was lost; it will retry next time.', 'error');
+    return false;
+  }
+}
+/* Writes only what changed in one month. */
+async function _flushMonth(mKey){
+  const m = allMonthsData[mKey]; if(!m || !firebaseReady || !currentLocationId) return;
+  const ref = db.collection('locations').doc(currentLocationId);
+  const now = new Date().toISOString(), who = (currentUser && currentUser.username) || 'unknown';
+  const ops = [];
+  ROW_COLLECTIONS.forEach(coll => {
+    if(!Array.isArray(m[coll])) m[coll] = [];
+    const snap = (_rowSnap[coll][mKey] = _rowSnap[coll][mKey] || {});
+    const seen = new Set();
+    m[coll].forEach(r => {
+      if(!r.id) r.id = _newRowId();
+      if(typeof r.seq !== 'number') r.seq = _newSeq();
+      seen.add(r.id);
+      const cur = _clean(r); cur.month = mKey;
+      const old = snap[r.id];
+      if(!old){
+        cur.createdAt = cur.createdAt || now; cur.createdBy = cur.createdBy || who; cur.updatedAt = now; cur.updatedBy = who;
+        ops.push({ coll, id: r.id, row: r, ref: ref.collection(coll).doc(r.id), data: cur, merge: false, stored: cur });
+      } else {
+        const d = _diffFields(old, cur);
+        if(Object.keys(d.changed).length || d.removed.length){
+          const data = { ...d.changed, updatedAt: now, updatedBy: who };
+          d.removed.forEach(k => { data[k] = _fieldDelete(); });
+          ops.push({ coll, id: r.id, row: r, ref: ref.collection(coll).doc(r.id), data, merge: true, stored: { ...cur, updatedAt: now, updatedBy: who } });
+        }
+      }
+    });
+    Object.keys(snap).forEach(id => { if(!seen.has(id)) ops.push({ coll, id, ref: ref.collection(coll).doc(id), del: true }); });
+  });
+  const meta = _clean(m); delete meta.entries; delete meta.purchases; meta.schema = 2;
+  const oldMeta = _metaSnap[mKey];
+  const md = _diffFields(oldMeta || null, meta);
+  if(!oldMeta || Object.keys(md.changed).length || md.removed.length){
+    const data = { ...md.changed }; md.removed.forEach(k => { data[k] = _fieldDelete(); });
+    ops.push({ meta: true, ref: ref.collection('months').doc(mKey), data, merge: true, stored: meta });
+  }
+  for(let i = 0; i < ops.length; i += 400){
+    const chunk = ops.slice(i, i + 400), batch = db.batch();
+    chunk.forEach(op => { if(op.del) batch.delete(op.ref); else if(op.merge) batch.set(op.ref, op.data, { merge: true }); else batch.set(op.ref, op.data); });
+    await batch.commit();
+    chunk.forEach(op => {                       // only remember what the server has confirmed
+      if(op.meta){ _metaSnap[mKey] = op.stored; return; }
+      const snap = _rowSnap[op.coll][mKey];
+      if(op.del){ delete snap[op.id]; return; }
+      snap[op.id] = op.stored;
+      ['createdAt','createdBy','updatedAt','updatedBy'].forEach(k => { if(op.stored[k] !== undefined) op.row[k] = op.stored[k]; });
+    });
+  }
+}
+function _enqueueFlush(monthKeys){
+  _pendingSaves++;
+  _saveChain = _saveChain.then(async () => {
+    try { for(const k of monthKeys) await _flushMonth(k); return true; }
+    catch(e) { console.error('Save failed', e); showSaveStatus('error', 'Save failed'); showToast('Save failed: ' + (e.message || e) + '. Your changes are still on screen and will be retried on your next edit.', 'error'); return false; }
+    finally { _pendingSaves--; }
+  });
+  return _saveChain;
+}
+window.addEventListener('beforeunload', e => { if(_saveScheduled || _pendingSaves > 0){ e.preventDefault(); e.returnValue = ''; } });
+/* ===== end per-row persistence ===== */
+
+/* Read-only month loader for the admin screens (works for old and new storage). */
+async function fetchLocationMonths(locId){
+  const ref = db.collection('locations').doc(locId);
+  const snap = await ref.collection('months').get();
+  const rowsByMonth = await _loadRowsByMonth(locId);
+  const out = [], seen = new Set();
+  snap.forEach(d => { seen.add(d.id); const a = _assembleMonth(d.id, d.data(), rowsByMonth); out.push({ id: d.id, data: () => a.m }); });
+  ROW_COLLECTIONS.forEach(coll => Object.keys(rowsByMonth[coll]).forEach(mk => { if(seen.has(mk)) return; seen.add(mk); const a = _assembleMonth(mk, { expenses: [], closed: false }, rowsByMonth); out.push({ id: mk, data: () => a.m }); }));
+  return out;
+}
 /* DATA LOADING */
 async function loadLocationData(locationId) {
   if(!firebaseReady) { showSaveStatus('error','No Firebase'); return; }
@@ -1561,7 +1723,22 @@ async function loadLocationData(locationId) {
     if(locDoc.exists) allLocationsCache[locationId] = locDoc.data();
 
     const snap = await db.collection('locations').doc(locationId).collection('months').get();
-    allMonthsData = {}; snap.forEach(doc => { allMonthsData[doc.id] = doc.data(); });
+    const rowsByMonth = await _loadRowsByMonth(locationId);
+    allMonthsData = {}; _rowSnap = { entries:{}, purchases:{} }; _metaSnap = {};
+    const _upgrades = [];
+    snap.forEach(doc => {
+      const data = doc.data(), a = _assembleMonth(doc.id, data, rowsByMonth);
+      allMonthsData[doc.id] = a.m;
+      ROW_COLLECTIONS.forEach(coll => { _rowSnap[coll][doc.id] = a.snap[coll]; });
+      _metaSnap[doc.id] = a.meta;
+      if(a.legacy) _upgrades.push({ key: doc.id, a, data });
+    });
+    ROW_COLLECTIONS.forEach(coll => Object.keys(rowsByMonth[coll]).forEach(mk => {       // rows whose month document is missing
+      if(allMonthsData[mk]) return;
+      const a = _assembleMonth(mk, { expenses: [], closed: false }, rowsByMonth);
+      allMonthsData[mk] = a.m; ROW_COLLECTIONS.forEach(c => { _rowSnap[c][mk] = a.snap[c]; });
+    }));
+    for(const u of _upgrades) await _migrateLegacyMonth(locationId, u.key, u.a, u.data);
     const wSnap = await db.collection('locations').doc(locationId).collection('weeklyClosures').get();
     weeklyClosures = []; wSnap.forEach(doc => weeklyClosures.push(doc.data()));
     weeklyClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -1578,8 +1755,9 @@ async function loadLocationData(locationId) {
     await backfillShiftPeriods();
     const curKey = currentCalendarMonthKey();
     if(!allMonthsData[curKey]) {
-      allMonthsData[curKey] = { entries: [], expenses: [], closed: false, purchases: [] };
-      await db.collection('locations').doc(locationId).collection('months').doc(curKey).set(allMonthsData[curKey]);
+      allMonthsData[curKey] = { entries: [], expenses: [], closed: false, purchases: [], schema: 2 };
+      await db.collection('locations').doc(locationId).collection('months').doc(curKey).set({ expenses: [], closed: false, schema: 2 });
+      _metaSnap[curKey] = { expenses: [], closed: false, schema: 2 };
     }
     const monthsSorted = Object.keys(allMonthsData).sort();
     if(!currentMonthKey || !allMonthsData[currentMonthKey]) currentMonthKey = monthsSorted.length ? monthsSorted[monthsSorted.length-1] : curKey;
@@ -1599,8 +1777,8 @@ async function loadMonthHistoryCache(){
   } catch(e) { console.warn('Month history load failed', e); }
 }
 async function saveMonthToFirestore(monthKey) {
-  if(!firebaseReady || !currentLocationId) return;
-  try { const data = allMonthsData[monthKey]; if(!data) return; await db.collection('locations').doc(currentLocationId).collection('months').doc(monthKey).set(data); } catch(e) { console.error(e); }
+  if(!firebaseReady || !currentLocationId || !allMonthsData[monthKey]) return false;
+  return _enqueueFlush([monthKey]);
 }
 async function saveClosureToFirestore(closure) {
   if(!firebaseReady || !currentLocationId) return;
@@ -1613,7 +1791,8 @@ async function saveLogEntry(entry) {
 function scheduleSave(monthKey) {
   showSaveStatus('saving');
   if(saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async () => { await saveMonthToFirestore(monthKey || currentMonthKey); showSaveStatus('saved'); }, 800);
+  _saveScheduled = true;
+  saveTimeout = setTimeout(async () => { _saveScheduled = false; const ok = await _enqueueFlush(Object.keys(allMonthsData)); if(ok) showSaveStatus('saved'); }, 800);
 }
 function addLog(action, details){
   const entry = { time: new Date().toISOString(), action, details, month: currentMonthKey, user: currentUser?.username || 'unknown', locationId: currentLocationId };
@@ -2002,15 +2181,15 @@ function renderClosurePurchases(){
   const canEdit = !closureLocked();
   if(!Array.isArray(sh.purchaseItems)) sh.purchaseItems = [];
   const names = [...new Set([...(suppliersCache || []).map(x => x.name), ...allPurchasesList().map(x => x.supplier)].filter(Boolean))].sort((a,b) => a.localeCompare(b));
-  const dl = `<datalist id="clSupplierList">${names.map(n => `<option value="${String(n).replace(/"/g,'&quot;')}"></option>`).join('')}</datalist>`;
+  const dl = `<datalist id="clSupplierList">${names.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   if(!sh.purchaseItems.length){
     wrap.innerHTML = `<div class="closure-purchase-empty">No purchases paid from the till in this shift.${canEdit ? ' Click <strong>Add purchase</strong> below.' : ''}</div>` + dl;
   } else {
     const ro = !canEdit ? 'readonly' : '';
     const bg = !canEdit ? 'background:#f2f6fa;' : '';
     wrap.innerHTML = sh.purchaseItems.map((p, idx) => `<div class="closure-purchase-row">
-        <input type="text" list="clSupplierList" value="${(p.supplier||'').replace(/"/g,'&quot;')}" ${ro} placeholder="Supplier" onchange="updateClosurePurchase(${idx},'supplier',this.value)" style="${bg}">
-        <input type="text" value="${(p.description||'').replace(/"/g,'&quot;')}" ${ro} placeholder="What was bought" onchange="updateClosurePurchase(${idx},'description',this.value)" style="${bg}">
+        <input type="text" list="clSupplierList" value="${esc(p.supplier)}" ${ro} placeholder="Supplier" onchange="updateClosurePurchase(${idx},'supplier',this.value)" style="${bg}">
+        <input type="text" value="${esc(p.description)}" ${ro} placeholder="What was bought" onchange="updateClosurePurchase(${idx},'description',this.value)" style="${bg}">
         <input type="number" step="0.01" class="amt" value="${p.amount ?? ''}" ${ro} placeholder="0" oninput="onClosurePurchaseInput(${idx}, this.value)" onchange="onClosurePurchaseChange(${idx}, this.value)" style="${bg}">
         <button type="button" class="remove-btn" ${canEdit ? '' : 'disabled'} onclick="removeClosurePurchase(${idx})"><i class="fas fa-trash-alt"></i></button>
       </div>`).join('') + dl;
@@ -2336,7 +2515,7 @@ function showShiftSummary(sh){
   const pItems = Array.isArray(sh.purchaseItems) ? sh.purchaseItems : [];
   const pTotal = pItems.length ? pItems.reduce((t, x) => t + (parseFloat(x.amount) || 0), 0) : (parseFloat(sh.purchasesPaid) || 0);
   const pRows = pItems.length
-    ? pItems.map(x => `<tr><td>${x.supplier || '—'}</td><td>${x.description || '—'}</td><td style="text-align:right;font-weight:600;color:#0b5a8a;">UGX ${fmt(x.amount)}</td></tr>`).join('')
+    ? pItems.map(x => `<tr><td>${esc(x.supplier) || '—'}</td><td>${esc(x.description) || '—'}</td><td style="text-align:right;font-weight:600;color:#0b5a8a;">UGX ${fmt(x.amount)}</td></tr>`).join('')
     : `<tr><td colspan="3" style="text-align:center;color:#7b8fa0;padding:1rem;">No purchases paid from till</td></tr>`;
   const d = parseFloat(sh.difference) || 0;
   const diffClass = d > 0 ? 'extra' : (d < 0 ? 'loss' : 'balanced');
@@ -2512,7 +2691,7 @@ async function renderAdminOverview(){
   let totalSalesAll = 0, totalNetAll = 0, totalEntries = 0;
   const perfRows = [];
   for(const [locId, locData] of Object.entries(allLocationsCache)) {
-    const monthsSnap = await db.collection('locations').doc(locId).collection('months').get();
+    const monthsSnap = await fetchLocationMonths(locId);
     let locSales = 0, locNet = 0, locEntries = 0;
     monthsSnap.forEach(d => {
       const m = d.data();
@@ -2639,7 +2818,7 @@ async function adminCreateLocation(){
     await db.collection('locations').doc(code).set({ name, code, status: 'active', createdAt: new Date().toISOString(), rolePermissions: {} });
     await db.collection('users').doc(mgr).set({ username: mgr, fullName: mgrName || mgr, password: mgrPass, locationId: code, role: 'manager', permissions: DEFAULT_PERMISSIONS.manager, status: 'active', createdAt: new Date().toISOString(), createdBy: 'admin' });
     const curKey = currentCalendarMonthKey();
-    await db.collection('locations').doc(code).collection('months').doc(curKey).set({ entries: [], expenses: [], closed: false, purchases: [] });
+    await db.collection('locations').doc(code).collection('months').doc(curKey).set({ expenses: [], closed: false, schema: 2 });
     document.getElementById('admLocName').value = ''; document.getElementById('admLocCode').value = '';
     document.getElementById('admLocManager').value = ''; document.getElementById('admLocManagerName').value = ''; document.getElementById('admLocManagerPass').value = '';
     showToast('Location + manager created', 'success');
@@ -2701,7 +2880,7 @@ async function viewLocationDetail(id){
   document.getElementById('locModalName').textContent = l.name || id;
   document.getElementById('locModalCode').textContent = 'Code: ' + id + ' · Status: ' + (l.status || 'active');
   const users = Object.entries(allUsersCache).filter(([_, u]) => u.locationId === id);
-  const monthsSnap = await db.collection('locations').doc(id).collection('months').get();
+  const monthsSnap = await fetchLocationMonths(id);
   let sales = 0, cost = 0, exp = 0, entries = 0, months = 0;
   monthsSnap.forEach(d => { const m = d.data(); months++; const es = m.entries || []; sales += es.reduce((s,r) => s + (parseFloat(r.sales)||0), 0); cost += es.reduce((s,r) => s + (parseFloat(r.cost)||0), 0); exp += es.reduce((s,r) => s + (parseFloat(r.expenses)||0), 0); entries += es.length; });
   const gross = sales - cost - exp;
@@ -3593,7 +3772,7 @@ async function reopenMonth(mKey){
   try {
     allMonthsData[mKey].closed = false; allMonthsData[mKey].reopened = true;
     allMonthsData[mKey].reopenedAt = new Date().toISOString(); allMonthsData[mKey].reopenedBy = currentUser.username;
-    await db.collection('locations').doc(currentLocationId).collection('months').doc(mKey).set(allMonthsData[mKey]);
+    await saveMonthToFirestore(mKey);
     addLog('Re-open Month', `${monthLabel(mKey)} re-opened by ${currentUser.username}`);
     renderMonthSelect(); renderPurchaseMonthSelect(); renderAll(); renderHistory();
     showToast('Month re-opened for editing', 'success');
@@ -3609,6 +3788,9 @@ async function deleteMonthHistory(mKey){
     const locRef = db.collection('locations').doc(currentLocationId);
     await locRef.collection('monthHistory').doc(mKey).delete();
     await locRef.collection('months').doc(mKey).delete();
+    await deleteQueryInBatches(locRef.collection('entries').where('month', '==', mKey));
+    await deleteQueryInBatches(locRef.collection('purchases').where('month', '==', mKey));
+    ROW_COLLECTIONS.forEach(c => { delete _rowSnap[c][mKey]; }); delete _metaSnap[mKey];
     const wcSnap = await locRef.collection('weeklyClosures').get();
     const batch = db.batch();
     let count = 0;
@@ -3813,9 +3995,9 @@ function runAuditWithRange(){
         </div>
         <div class="formula-block">
           <div class="formula-title"><i class="fas fa-money-bill-wave"></i> 3. Cash Flow</div>
-          <div><code>Cash Portion of Sales = Total Sales − (MTN + Airtel) from shifts in range</code></div>
-          <div><code>Cash Expected = Opening Cash + Cash Portion of Sales (incl. credit repaid) − Daily Expenses − Cash paid to suppliers − Withdrawals</code></div>
-          <div><code>Actual Cash at Hand = Opening Cash + Σ(Shift Counted Cash − Opening Float) − Cash paid to suppliers (cash purchases + ledger cash payments) − Cash banked/withdrawn</code></div>
+          <div><code>Cash Portion of Sales = Total Sales − (MTN + Airtel + Bank + Credit sales) from shifts in range</code></div>
+          <div><code>Cash Expected = Opening Cash + Cash Portion of Sales (incl. credit repaid) − Daily Expenses − Cash paid to suppliers (incl. purchases paid from till) − Withdrawals</code></div>
+          <div><code>Actual Cash at Hand = Opening Cash + Σ(Shift Counted Cash − Opening Float) − Cash paid to suppliers outside the till (purchases already paid from the till are inside Counted Cash) − Cash banked/withdrawn</code></div>
           <div><code>Cash Gap = Actual Cash at Hand − Cash Expected</code></div>
           <div class="why"><strong>Why:</strong> cash should equal what came in (cash sales only) minus what was paid out. A negative gap = missing cash; a positive gap = unrecorded cash inflow or overstated expenses.</div>
         </div>
@@ -4159,7 +4341,7 @@ function runAuditWithRange(){
     if(shiftSalesSum && eTot / shiftSalesSum > 0.1) issues.amber.push({title:'High till expenses', desc:`Till expenses are ${fmtPct(eTot / shiftSalesSum * 100)} of shift sales.`});
   }
   const mis = eItems.filter(i => /purchas|restock|supplier|wholesale|goods|stock/i.test(i.desc + ' ' + i.type));
-  if(mis.length) issues.amber.push({title:'Purchases recorded as till expenses', desc:`<strong>${mis.length}</strong> expense(s) worth UGX ${fmt(mis.reduce((a,i)=>a+i.amt,0))} look like stock purchases (${mis.slice(0,3).map(i => `${i.date} ${i.desc || i.type}`).join('; ')}). Move them to <em>Purchases paid from till</em> so expenses and profit are not distorted.`});
+  if(mis.length) issues.amber.push({title:'Purchases recorded as till expenses', desc:`<strong>${mis.length}</strong> expense(s) worth UGX ${fmt(mis.reduce((a,i)=>a+i.amt,0))} look like stock purchases (${mis.slice(0,3).map(i => `${i.date} ${esc(i.desc || i.type)}`).join('; ')}). Move them to <em>Purchases paid from till</em> so expenses and profit are not distorted.`});
   const tillP = []; shiftsInRange.forEach(x => (x.purchaseItems || []).forEach(p => tillP.push({date:x.date, who:x.cashierName || x.cashier || '?', sup:(p.supplier || '').trim(), desc:(p.description || '').trim(), amt:_n(p.amount)})));
   if(tillP.length){
     const noInfo = tillP.filter(i => !i.sup && !i.desc);
