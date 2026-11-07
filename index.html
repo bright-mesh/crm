@@ -438,6 +438,8 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .sf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;}
 .sf-field label{display:block;font-size:0.68rem;font-weight:700;color:#5f7385;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.25rem;}
 .sf-field input,.sf-field select,.sf-field textarea{width:100%;padding:0.55rem 0.6rem;border-radius:8px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.85rem;background:#fff;}
+.sf-locked{opacity:0.55;}
+.sf-locked select,.sf-locked input{background:#e9eef3 !important;color:#6a7f94;cursor:not-allowed;}
 .sf-box{background:#fff;border:1px solid #dfe9f3;border-radius:14px;padding:0.9rem 1rem;margin-top:0.9rem;}
 .sf-box h4{margin:0 0 0.6rem;font-size:0.82rem;color:#0b2b44;}
 .sf-preview{display:flex;gap:1rem;flex-wrap:wrap;background:#eef6ff;border:1px solid #b9d6f0;border-radius:12px;padding:0.7rem 1rem;margin-top:0.9rem;font-size:0.85rem;}
@@ -936,7 +938,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <select id="shiftEmpFilter" onchange="renderShifts()" style="padding:0.5rem 0.8rem;border-radius:10px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.82rem;">
           <option value="">All employees</option>
         </select>
-        <button class="btn manager-only" onclick="addMissingShift()"><i class="fas fa-plus-circle"></i> Add missing shift</button>
+        <button class="btn shift-identity-only" onclick="addMissingShift()"><i class="fas fa-plus-circle"></i> Add missing shift</button>
         <button class="btn manager-only" onclick="closeAllShiftsForMonth()"><i class="fas fa-lock"></i> Close all shifts for month</button>
       </div>
     </div>
@@ -1213,7 +1215,8 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       <button class="modal-close" onclick="closeShiftForm()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <div class="sf-grid">
+      <div id="sfIdentityNote" style="display:none;margin-bottom:0.6rem;font-size:0.78rem;color:#7a5200;background:#fff6e0;border:1px solid #f0d58a;border-radius:10px;padding:0.5rem 0.8rem;"><i class="fas fa-lock"></i> Cashier, date, period, times and status can only be changed by users with the “Change shift cashier, date, period &amp; times” permission. Ask your manager if one of these is wrong.</div>
+      <div class="sf-grid" id="sfIdentity">
         <div class="sf-field"><label>Cashier</label><select id="sfCashier"></select></div>
         <div class="sf-field"><label>Date</label><input type="date" id="sfDate" oninput="sfPreview()"></div>
         <div class="sf-field"><label>Period</label><select id="sfPeriod"><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select></div>
@@ -1334,9 +1337,9 @@ const PERIOD_DEFS = {
 };
 
 const DEFAULT_PERMISSIONS = {
-  manager:    { view:true, editDaily:true, editPurchases:true, editExpenses:true, closeMonth:true, viewAudit:true, viewLog:true, manageUsers:true, editShifts:true, viewDaily:true, viewPurchases:true, viewShifts:true, viewHistory:true, viewSuppliers:true, manageShiftClosures:true, manageDailyBalancing:true },
-  accountant: { view:true, editDaily:true, editPurchases:true, editExpenses:true, closeMonth:false, viewAudit:true, viewLog:true, manageUsers:false, editShifts:true, viewDaily:true, viewPurchases:true, viewShifts:true, viewHistory:true, viewSuppliers:true, manageShiftClosures:true, manageDailyBalancing:true },
-  cashier:    { view:true, editDaily:false, editPurchases:true, editExpenses:false, closeMonth:false, viewAudit:false, viewLog:false, manageUsers:false, editShifts:true, viewDaily:false, viewPurchases:true, viewShifts:true, viewHistory:false, viewSuppliers:false, manageShiftClosures:false, manageDailyBalancing:false }
+  manager:    { view:true, editDaily:true, editPurchases:true, editExpenses:true, closeMonth:true, viewAudit:true, viewLog:true, manageUsers:true, editShifts:true, viewDaily:true, viewPurchases:true, viewShifts:true, viewHistory:true, viewSuppliers:true, manageShiftClosures:true, manageDailyBalancing:true, editShiftDetails:true },
+  accountant: { view:true, editDaily:true, editPurchases:true, editExpenses:true, closeMonth:false, viewAudit:true, viewLog:true, manageUsers:false, editShifts:true, viewDaily:true, viewPurchases:true, viewShifts:true, viewHistory:true, viewSuppliers:true, manageShiftClosures:true, manageDailyBalancing:true, editShiftDetails:false },
+  cashier:    { view:true, editDaily:false, editPurchases:true, editExpenses:false, closeMonth:false, viewAudit:false, viewLog:false, manageUsers:false, editShifts:true, viewDaily:false, viewPurchases:true, viewShifts:true, viewHistory:false, viewSuppliers:false, manageShiftClosures:false, manageDailyBalancing:false, editShiftDetails:false }
 };
 
 const SESSION_KEY = 'brightmesh_session_v5';
@@ -1443,6 +1446,7 @@ function hasPerm(perm){
   if(currentUser.role === 'admin' || currentUser.role === 'superadmin') return true;
   const merged = getRolePermissions(currentUser.role);
   if(perm === 'manageUsers' && currentUser.role === 'manager' && merged.manageUsers !== false) return true;
+  if(perm === 'editShiftDetails' && currentUser.role === 'manager' && merged.editShiftDetails !== false) return true;
   return !!merged[perm];
 }
 function applyTabPermissions(){
@@ -2015,6 +2019,9 @@ function applyPermissions(){
   document.querySelectorAll('.manager-only').forEach(el => {
     el.style.display = hasPerm('manageUsers') ? '' : 'none';
   });
+  document.querySelectorAll('.shift-identity-only').forEach(el => {
+    el.style.display = (hasPerm('editShiftDetails') && (hasPerm('manageUsers') || hasPerm('manageShiftClosures'))) ? '' : 'none';
+  });
 }
 
 function doLogout(){
@@ -2319,7 +2326,7 @@ function renderClosurePurchases(){
   if(!sh || !wrap) return;
   const canEdit = !closureLocked();
   if(!Array.isArray(sh.purchaseItems)) sh.purchaseItems = [];
-  const names = [...new Set([...(suppliersCache || []).map(x => x.name), ...allPurchasesList().map(x => x.supplier)].filter(Boolean))].sort((a,b) => a.localeCompare(b));
+  const names = registeredSupplierNames();
   const dl = `<datalist id="clSupplierList">${names.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   if(!sh.purchaseItems.length){
     wrap.innerHTML = `<div class="closure-purchase-empty">No purchases paid from the till in this shift.${canEdit ? ' Click <strong>Add purchase</strong> below.' : ''}</div>` + dl;
@@ -2740,6 +2747,7 @@ async function editShift(id){ return openShiftForm('edit', id); }
 async function openShiftForm(mode, id){
   if(!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')){ showToast('You do not have permission to change shifts', 'error'); return; }
   let sh = null;
+  if(mode === 'add' && !hasPerm('editShiftDetails')){ showToast('Adding a shift needs the “Change shift cashier, date, period & times” permission.', 'error'); return; }
   if(mode === 'edit'){ sh = allShifts.find(x => x.id === id); if(!sh){ showToast('Shift not found', 'error'); return; } }
   const users = await sfLoadUsers();
   sfState = {
@@ -2771,12 +2779,17 @@ async function openShiftForm(mode, id){
   $('sfReasonLabel').textContent = mode === 'add' ? 'Why was this shift not logged? (required)' : 'Reason for this change (required)';
   $('sfSaveBtn').innerHTML = mode === 'add' ? '<i class="fas fa-save"></i> Add shift' : '<i class="fas fa-save"></i> Save changes';
   sfRenderLists(); sfPreview();
+  const lockIdentity = mode === 'edit' && !hasPerm('editShiftDetails');
+  sfState.lockIdentity = lockIdentity;
+  $('sfIdentity').classList.toggle('sf-locked', lockIdentity);
+  ['sfCashier','sfDate','sfPeriod','sfStart','sfEnd','sfStatus'].forEach(x => { $(x).disabled = lockIdentity; });
+  $('sfIdentityNote').style.display = lockIdentity ? 'block' : 'none';
   $('shiftFormModal').classList.add('active');
 }
 function closeShiftForm(){ document.getElementById('shiftFormModal').classList.remove('active'); sfState = null; }
 function sfRenderLists(){
   if(!sfState) return;
-  const names = [...new Set([...(suppliersCache || []).map(x => x.name), ...allPurchasesList().map(x => x.supplier)].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const names = registeredSupplierNames();
   const dl = `<datalist id="sfSupplierList">${names.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
   document.getElementById('sfExpList').innerHTML = (sfState.expenseItems.length ? sfState.expenseItems.map((e, i) => `<div class="closure-expense-row">
       <select onchange="sfSetItem('expenseItems',${i},'type',this.value)">${CLOSURE_EXPENSE_TYPES.map(t => `<option value="${t}" ${e.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
@@ -2868,11 +2881,15 @@ async function saveShiftForm(){
   if(!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')){ showToast('You do not have permission to change shifts', 'error'); return; }
   const $ = x => document.getElementById(x);
   const reason = $('sfReason').value.trim();
-  const date = $('sfDate').value, cashier = $('sfCashier').value;
+  const locked = sfState.mode === 'edit' && !hasPerm('editShiftDetails');
+  const o = sfState.original || {};
+  const date = locked ? o.date : $('sfDate').value, cashier = locked ? o.cashier : $('sfCashier').value;
   if(!date){ showToast('Pick the shift date', 'error'); return; }
   if(!cashier){ showToast('Pick the cashier', 'error'); return; }
   const users = await sfLoadUsers();
-  const f = { cashier, date, period: $('sfPeriod').value, start: $('sfStart').value, end: $('sfEnd').value, status: $('sfStatus').value, note: $('sfNote').value.trim(), values: sfValues() };
+  const f = locked
+    ? { cashier, date, period: o.period, start: sfState.startHM, end: sfState.endHM, status: o.status, note: $('sfNote').value.trim(), values: sfValues() }
+    : { cashier, date, period: $('sfPeriod').value, start: $('sfStart').value, end: $('sfEnd').value, status: $('sfStatus').value, note: $('sfNote').value.trim(), values: sfValues() };
   const nowIso = new Date().toISOString();
   const { next, changes } = sfBuild(sfState, f, users, currentUser.username, nowIso);
   if(sfState.mode === 'edit' && !changes.length){ showToast('No changes to save'); return; }
@@ -3268,6 +3285,7 @@ async function saveAdminPassword(){
 }
 
 /* SUPPLIERS */
+function registeredSupplierNames(){ return [...new Set((suppliersCache || []).map(x => (x.name || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
 function allPurchasesList(){ const o = []; Object.keys(allMonthsData).forEach(m => (allMonthsData[m].purchases || []).forEach(p => o.push(p))); return o; }
 function buildLedger(upTo){
   const L = {}; const g = n => (L[n] = L[n] || {name:n, opening:0, credit:0, paidNow:0, paid:0, lastPay:'', oldestCredit:''});
@@ -3280,14 +3298,15 @@ function buildLedger(upTo){
 }
 function renderSupplierLedger(){
   const body = document.getElementById('ledgerBody'); if(!body) return;
-  const rows = Object.values(buildLedger()).sort((a,b) => b.balance - a.balance);
+  const registered = new Set(registeredSupplierNames());
+  const rows = Object.values(buildLedger()).filter(r => registered.has(r.name) || Math.abs(r.balance) > 0.5).sort((a,b) => b.balance - a.balance);
   const owed = rows.reduce((a,r) => a + Math.max(0, r.balance), 0), over = rows.filter(r => r.balance < -1).length;
   const sg = document.getElementById('ledgerSummary');
   if(sg) sg.innerHTML = `<div class="sum-card ${owed>0?'flag-amber':'flag-green'}"><div class="sum-label">Total owed to suppliers</div><div class="sum-value">${fmt(owed)}</div></div><div class="sum-card"><div class="sum-label">Suppliers with a balance</div><div class="sum-value">${rows.filter(r=>r.balance>0).length}</div></div><div class="sum-card"><div class="sum-label">Paid to suppliers (all time)</div><div class="sum-value">${fmt(rows.reduce((a,r)=>a+r.paid+r.paidNow,0))}</div></div><div class="sum-card ${over?'flag-red':'flag-green'}"><div class="sum-label">Overpaid suppliers</div><div class="sum-value">${over}</div></div>`;
   const empty = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#7b8fa0;">Nothing to show yet.</td></tr>';
-  body.innerHTML = rows.length ? rows.map(r => `<tr><td><strong>${r.name}</strong></td><td>${fmt(r.opening)}</td><td>${fmt(r.credit)}</td><td>${fmt(r.paidNow)}</td><td>${fmt(r.paid)}</td><td style="font-weight:700;color:${r.balance<0?'#b33a3a':(r.balance>0?'#b06d00':'#1d7a4b')};">${fmt(r.balance)}</td></tr>`).join('') : empty;
-  const names = [...new Set([...suppliersCache.map(s=>s.name), ...rows.map(r=>r.name)])].filter(n => n && n !== '(Unnamed)').sort();
-  ['payName','ledgerSupplier'].forEach(id => { const el = document.getElementById(id); if(!el) return; const cur = el.value; el.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join(''); if(cur && names.includes(cur)) el.value = cur; });
+  body.innerHTML = rows.length ? rows.map(r => `<tr><td><strong>${esc(r.name)}</strong>${registered.has(r.name) ? '' : ' <span class="badge-pill amber" title="This name is on purchases or payments but not in your supplier list. Correct the entries or add the supplier.">Not in supplier list</span>'}</td><td>${fmt(r.opening)}</td><td>${fmt(r.credit)}</td><td>${fmt(r.paidNow)}</td><td>${fmt(r.paid)}</td><td style="font-weight:700;color:${r.balance<0?'#b33a3a':(r.balance>0?'#b06d00':'#1d7a4b')};">${fmt(r.balance)}</td></tr>`).join('') : empty;
+  const names = [...new Set([...registeredSupplierNames(), ...rows.map(r=>r.name)])].filter(n => n && n !== '(Unnamed)').sort();
+  ['payName','ledgerSupplier'].forEach(id => { const el = document.getElementById(id); if(!el) return; const cur = el.value; el.innerHTML = names.map(n => `<option value="${esc(n)}">${esc(n)}${registered.has(n) ? '' : ' (not in supplier list)'}</option>`).join(''); if(cur && names.includes(cur)) el.value = cur; });
   const pd = document.getElementById('payDate'); if(pd && !pd.value) pd.value = todayStr();
   const nm = (document.getElementById('ledgerSupplier')||{}).value, st = document.getElementById('ledgerStatement'); if(!st) return;
   if(!nm){ st.innerHTML = empty; return; }
@@ -3354,30 +3373,85 @@ async function addSupplier(){
     renderSuppliersList(); renderPurchases();
   } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
+/* Everything that mentions a supplier by name: Daily Purchases rows, supplier payments, purchases paid from till. */
+function countSupplierRefs(name){
+  const n = (name || '').trim();
+  let purchases = 0, payments = 0, till = 0;
+  Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(p => { if((p.supplier || '').trim() === n) purchases++; }));
+  supplierPayments.forEach(x => { if((x.supplier || '').trim() === n) payments++; });
+  allShifts.forEach(sh => (sh.purchaseItems || []).forEach(i => { if((i.supplier || '').trim() === n) till++; }));
+  return { purchases, payments, till, total: purchases + payments + till };
+}
+function describeSupplierRefs(c){ return `${c.purchases} purchase(s), ${c.payments} payment(s) and ${c.till} purchase(s) paid from till`; }
+async function renameSupplierEverywhere(oldName, newName){
+  const o = (oldName || '').trim(), ref = db.collection('locations').doc(currentLocationId);
+  let purchases = 0;
+  Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(p => { if((p.supplier || '').trim() === o){ p.supplier = newName; purchases++; } }));
+  if(purchases){ const ok = await _enqueueFlush(Object.keys(allMonthsData)); if(!ok) throw new Error('Could not save the corrected purchases'); }
+  for(const x of supplierPayments){
+    if((x.supplier || '').trim() !== o) continue;
+    if(x.id && !String(x.id).startsWith('local_')) await ref.collection('supplierPayments').doc(x.id).update({ supplier: newName });
+    x.supplier = newName;
+  }
+  for(const sh of allShifts){
+    if(!Array.isArray(sh.purchaseItems) || !sh.purchaseItems.some(i => (i.supplier || '').trim() === o)) continue;
+    sh.purchaseItems.forEach(i => { if((i.supplier || '').trim() === o) i.supplier = newName; });
+    if(sh.id && !String(sh.id).startsWith('local_')) await ref.collection('shifts').doc(sh.id).update({ purchaseItems: sh.purchaseItems });
+  }
+}
+async function reloadSuppliers(){
+  const sSnap = await db.collection('locations').doc(currentLocationId).collection('suppliers').get();
+  suppliersCache = []; sSnap.forEach(doc => suppliersCache.push({ id: doc.id, ...doc.data() }));
+  suppliersCache.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+}
 async function editSupplier(id){
   if(!hasPerm('editPurchases')){ showToast('No permission', 'error'); return; }
   const s = suppliersCache.find(x => x.id === id); if(!s) return;
-  const newName = prompt('Supplier name:', s.name || ''); if(newName === null) return;
+  let newName = prompt('Supplier name:', s.name || ''); if(newName === null) return;
+  newName = newName.trim(); if(!newName){ showToast('Supplier name required', 'error'); return; }
   const newContact = prompt('Contact person (optional):', s.contact || ''); if(newContact === null) return;
   const newPhone = prompt('Phone (optional):', s.phone || ''); if(newPhone === null) return;
   const newCategory = prompt('Category (optional):', s.category || ''); if(newCategory === null) return;
+  const ref = db.collection('locations').doc(currentLocationId).collection('suppliers');
   try {
-    await db.collection('locations').doc(currentLocationId).collection('suppliers').doc(id).update({ name: newName, contact: newContact, phone: newPhone, category: newCategory });
-    addLog('Edit Supplier', `${newName}`);
-    showToast('Supplier updated', 'success');
-    const sSnap = await db.collection('locations').doc(currentLocationId).collection('suppliers').get();
-    suppliersCache = []; sSnap.forEach(doc => suppliersCache.push({ id: doc.id, ...doc.data() }));
-    suppliersCache.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+    const renamed = newName !== (s.name || '').trim();
+    const target = renamed ? suppliersCache.find(x => x.id !== id && (x.name || '').trim().toLowerCase() === newName.toLowerCase()) : null;
+    if(target){                                           // same supplier entered twice: merge into the existing one
+      const c = countSupplierRefs(s.name);
+      if(!confirm(`"${s.name}" will be merged into the existing supplier "${target.name}".\n\nThis moves ${describeSupplierRefs(c)} to "${target.name}", adds the opening balances together and removes "${s.name}" from the list.\n\nContinue?`)) return;
+      showSaveStatus('saving', 'Merging supplier...');
+      await renameSupplierEverywhere(s.name, target.name);
+      const opening = (parseFloat(target.openingBalance) || 0) + (parseFloat(s.openingBalance) || 0);
+      await ref.doc(target.id).update({ openingBalance: opening });
+      await ref.doc(id).delete();
+      addLog('Merge Supplier', `"${s.name}" merged into "${target.name}" (${describeSupplierRefs(c)} updated)`);
+      showToast('Suppliers merged', 'success');
+    } else {
+      if(renamed){
+        const c = countSupplierRefs(s.name);
+        if(c.total && !confirm(`Rename "${s.name}" to "${newName}"?\n\nThis also corrects ${describeSupplierRefs(c)} that use the old name, so the old name disappears from every list.`)) return;
+        showSaveStatus('saving', 'Renaming supplier...');
+        await renameSupplierEverywhere(s.name, newName);
+        addLog('Rename Supplier', `"${s.name}" → "${newName}" (${describeSupplierRefs(c)} updated)`);
+      }
+      await ref.doc(id).update({ name: newName, contact: newContact, phone: newPhone, category: newCategory });
+      addLog('Edit Supplier', `${newName}`);
+      showToast('Supplier updated', 'success');
+    }
+    await reloadSuppliers();
+    showSaveStatus('saved');
     renderSuppliersList(); renderPurchases();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showSaveStatus('error'); showToast('Error: ' + e.message, 'error'); }
 }
 async function deleteSupplier(id){
   if(!hasPerm('editPurchases')){ showToast('No permission', 'error'); return; }
   const s = suppliersCache.find(x => x.id === id); if(!s) return;
-  if(!confirm(`Delete supplier "${s.name}"?`)) return;
+  const c = countSupplierRefs(s.name);
+  const warn = c.total ? `\n\n${describeSupplierRefs(c)} still use this name. They are kept, and will show as "Not in supplier list" until you correct them (use Edit on the right supplier to merge, or change the rows).` : '';
+  if(!confirm(`Delete supplier "${s.name}"?${warn}`)) return;
   try {
     await db.collection('locations').doc(currentLocationId).collection('suppliers').doc(id).delete();
-    addLog('Delete Supplier', `${s.name}`);
+    addLog('Delete Supplier', `${s.name}${c.total ? ' (' + describeSupplierRefs(c) + ' still reference it)' : ''}`);
     showToast('Supplier deleted', 'success');
     suppliersCache = suppliersCache.filter(x => x.id !== id);
     renderSuppliersList(); renderPurchases();
@@ -3403,6 +3477,7 @@ function renderTeamPermissionGrid(selected){
     {key:'editExpenses', label:'Edit expenses'},
     {key:'editShifts', label:'Start / End shift'},
     {key:'manageShiftClosures', label:'Manage shift closures (edit/delete)'},
+    {key:'editShiftDetails', label:'Change shift cashier, date, period & times'},
     {key:'manageDailyBalancing', label:'Manage daily balancing (edit/delete)'},
     {key:'closeMonth', label:'Close month'},
     {key:'viewAudit', label:'View audit'},
