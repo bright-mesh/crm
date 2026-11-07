@@ -435,6 +435,15 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   .closure-expense-row,.closure-expense-row.has-move,.closure-purchase-row{grid-template-columns:1fr auto auto;}
   .closure-expense-row select,.closure-expense-row input:not(.amt),.closure-purchase-row input:not(.amt){grid-column:1/-1;}
 }
+.sf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;}
+.sf-field label{display:block;font-size:0.68rem;font-weight:700;color:#5f7385;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.25rem;}
+.sf-field input,.sf-field select,.sf-field textarea{width:100%;padding:0.55rem 0.6rem;border-radius:8px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.85rem;background:#fff;}
+.sf-box{background:#fff;border:1px solid #dfe9f3;border-radius:14px;padding:0.9rem 1rem;margin-top:0.9rem;}
+.sf-box h4{margin:0 0 0.6rem;font-size:0.82rem;color:#0b2b44;}
+.sf-preview{display:flex;gap:1rem;flex-wrap:wrap;background:#eef6ff;border:1px solid #b9d6f0;border-radius:12px;padding:0.7rem 1rem;margin-top:0.9rem;font-size:0.85rem;}
+.sf-preview strong{font-size:1rem;}
+@keyframes rowflash{0%{background:#fff3c4;}100%{background:transparent;}}
+.row-flash td{animation:rowflash 1.6s ease;}
 .closure-expense-empty{text-align:center;padding:0.9rem;color:#7b8fa0;font-size:0.82rem;background:#fff;border-radius:10px;border:1px dashed #e0c9a0;}
 .shift-summary-modal .modal-body{background:#f6f9fd;}
 .shift-summary-tbl{width:100%;border-collapse:collapse;font-size:0.85rem;min-width:500px;}
@@ -675,6 +684,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   <!-- DAILY CLOSURE -->
   <div class="tab-panel" id="tab-closure">
     <div id="closureStartBox" style="display:none;">
+      <div id="closureReopenBox"></div>
       <div class="start-shift-box">
         <div class="icon"><i class="fas fa-cash-register"></i></div>
         <h3>Start a New Shift</h3>
@@ -926,6 +936,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <select id="shiftEmpFilter" onchange="renderShifts()" style="padding:0.5rem 0.8rem;border-radius:10px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.82rem;">
           <option value="">All employees</option>
         </select>
+        <button class="btn manager-only" onclick="addMissingShift()"><i class="fas fa-plus-circle"></i> Add missing shift</button>
         <button class="btn manager-only" onclick="closeAllShiftsForMonth()"><i class="fas fa-lock"></i> Close all shifts for month</button>
       </div>
     </div>
@@ -1192,6 +1203,58 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       <button class="modal-close" onclick="closeShiftSummary()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" id="shiftSummaryBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="shiftFormModal">
+  <div class="modal" style="max-width:820px;">
+    <div class="modal-header">
+      <div><h2 id="sfTitle"><i class="fas fa-pen-to-square"></i> Edit shift</h2><div class="sub" id="sfSub">—</div></div>
+      <button class="modal-close" onclick="closeShiftForm()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="sf-grid">
+        <div class="sf-field"><label>Cashier</label><select id="sfCashier"></select></div>
+        <div class="sf-field"><label>Date</label><input type="date" id="sfDate" oninput="sfPreview()"></div>
+        <div class="sf-field"><label>Period</label><select id="sfPeriod"><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select></div>
+        <div class="sf-field"><label>Start time</label><input type="time" id="sfStart"></div>
+        <div class="sf-field"><label>End time</label><input type="time" id="sfEnd"></div>
+        <div class="sf-field"><label>Status</label><select id="sfStatus"></select></div>
+      </div>
+      <div class="sf-box">
+        <h4><i class="fas fa-coins"></i> Sales and cash</h4>
+        <div class="sf-grid">
+          <div class="sf-field"><label>Closing sales (system)</label><input type="number" step="0.01" id="sfSales" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>MTN MoMo</label><input type="number" step="0.01" id="sfMtn" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>Airtel Money</label><input type="number" step="0.01" id="sfAirtel" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>Bank / Card / POS</label><input type="number" step="0.01" id="sfBank" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>Credit sales (unpaid)</label><input type="number" step="0.01" id="sfCreditSales" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>Credit repaid in cash</label><input type="number" step="0.01" id="sfCreditRepay" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>Voids / refunds</label><input type="number" step="0.01" id="sfVoids"></div>
+          <div class="sf-field"><label>Opening float</label><input type="number" step="0.01" id="sfOpening" oninput="sfPreview()"></div>
+          <div class="sf-field"><label>Cash counted</label><input type="number" step="0.01" id="sfCounted" oninput="sfPreview()"></div>
+        </div>
+      </div>
+      <div class="sf-box">
+        <h4><i class="fas fa-receipt"></i> Expenses paid from till</h4>
+        <div id="sfExpList"></div>
+        <button type="button" class="add-row-btn" onclick="sfAddExpense()"><i class="fas fa-plus-circle"></i> Add expense</button>
+      </div>
+      <div class="sf-box" style="background:#f4f9ff;">
+        <h4><i class="fas fa-truck-ramp-box"></i> Purchases paid from till</h4>
+        <div id="sfPurList"></div>
+        <button type="button" class="add-row-btn" onclick="sfAddPurchase()"><i class="fas fa-plus-circle"></i> Add purchase</button>
+      </div>
+      <div class="sf-preview" id="sfPreview"></div>
+      <div class="sf-grid" style="margin-top:0.9rem;grid-template-columns:1fr 1fr;">
+        <div class="sf-field"><label>Note (optional)</label><input type="text" id="sfNote"></div>
+        <div class="sf-field"><label id="sfReasonLabel">Reason for this change (required)</label><input type="text" id="sfReason" placeholder="e.g. Cashier forgot to log in; Fazila worked this shift"></div>
+      </div>
+      <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:1.1rem;">
+        <button class="btn" onclick="closeShiftForm()">Cancel</button>
+        <button class="btn btn-primary" id="sfSaveBtn" onclick="saveShiftForm()"><i class="fas fa-save"></i> Save</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1531,7 +1594,7 @@ async function autoClosePastShifts(){
   const today = todayStr();
   let changed = false;
   for(const sh of allShifts) {
-    if(sh.date < today && sh.status === 'open') {
+    if(sh.date < today && sh.status === 'open' && !shiftInReopenGrace(sh)) {
       try {
         sh.status = 'closed'; sh.closedAt = new Date().toISOString(); sh.closedBy = 'auto';
         await db.collection('locations').doc(currentLocationId).collection('shifts').doc(sh.id).update({ status: 'closed', closedAt: sh.closedAt, closedBy: 'auto' });
@@ -1611,6 +1674,7 @@ function _assembleMonth(mKey, data, rowsByMonth){
       });
       rows.sort((a, b) => (a.seq || 0) - (b.seq || 0));
     }
+    sortRowsByDate(rows);
     m[coll] = rows;
   });
   const meta = _clean(m); delete meta.entries; delete meta.purchases;
@@ -1751,7 +1815,7 @@ async function loadLocationData(locationId) {
     supplierPayments = []; spSnap.forEach(doc => supplierPayments.push({ id: doc.id, ...doc.data() }));
     const shSnap = await db.collection('locations').doc(locationId).collection('shifts').orderBy('date','desc').limit(500).get();
     allShifts = []; shSnap.forEach(doc => allShifts.push({ id: doc.id, ...doc.data() }));
-    allShifts.sort((a,b) => { if(a.date !== b.date) return (b.date||'').localeCompare(a.date||''); return (b.openedAt||'').localeCompare(a.openedAt||''); });
+    sortAllShifts();
     await backfillShiftPeriods();
     const curKey = currentCalendarMonthKey();
     if(!allMonthsData[curKey]) {
@@ -1969,9 +2033,53 @@ function doLogout(){
 }
 
 /* DAILY CLOSURE / SHIFTS */
+const SHIFT_REOPEN_GRACE_HOURS = 12;   // a re-opened shift is not auto-closed again for this long
+function shiftInReopenGrace(sh){
+  if(!sh || !sh.reopenedAt) return false;
+  const t = new Date(sh.reopenedAt).getTime();
+  return !isNaN(t) && (Date.now() - t) < SHIFT_REOPEN_GRACE_HOURS * 3600 * 1000;
+}
 function findTodaysOpenShiftForMe(){
   const today = todayStr();
-  return allShifts.find(sh => sh.date === today && sh.cashier === currentUser?.username && sh.status === 'open');
+  return allShifts.find(sh => sh.cashier === currentUser?.username && sh.status === 'open' && (sh.date === today || shiftInReopenGrace(sh)));
+}
+/* A cashier may re-open his own shift once, only if the system closed it (e.g. he crossed midnight), and only
+   while the shift is from today or yesterday. Anything else goes to a manager. */
+function cashierCanReopen(sh){
+  if(!sh || !currentUser || sh.cashier !== currentUser.username) return false;
+  if(sh.status !== 'closed' || sh.closedBy !== 'auto' || sh.reopenedByCashier) return false;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  return (sh.date || '') >= _ymd(y);
+}
+function renderReopenBox(){
+  const box = document.getElementById('closureReopenBox'); if(!box) return;
+  const list = allShifts.filter(cashierCanReopen);
+  box.innerHTML = list.map(sh => `<div style="margin-bottom:1rem;background:#fff6e0;border:1px solid #f0d58a;border-radius:14px;padding:1rem 1.2rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;"><div style="font-weight:700;color:#7a5200;"><i class="fas fa-moon"></i> Your ${periodLabel(sh.period)} shift of ${new Date(sh.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} was closed automatically</div>
+      <div style="font-size:0.82rem;color:#7a5200;margin-top:0.2rem;">If you were still serving customers past midnight, re-open it to finish your counts and end it properly. You can do this once.</div></div>
+      <button class="btn btn-primary" onclick="cashierReopenShift('${sh.id}')"><i class="fas fa-lock-open"></i> Re-open my shift</button></div>`).join('');
+}
+async function cashierReopenShift(id){
+  const sh = allShifts.find(x => x.id === id);
+  if(!cashierCanReopen(sh)){ showToast('This shift can no longer be re-opened by you. Please ask your manager to correct it.', 'error'); return; }
+  if(allShifts.some(x => x.cashier === currentUser.username && x.status === 'open')){ showToast('End your current open shift first, or ask your manager to correct the earlier one.', 'error'); return; }
+  const reason = prompt('Why are you re-opening this shift? (e.g. customers delayed me past midnight)');
+  if(reason === null) return;
+  if(reason.trim().length < 3){ showToast('Please give a short reason', 'error'); return; }
+  const now = new Date().toISOString();
+  const wasClosedAt = sh.closedAt || null;
+  const entry = { at: now, by: currentUser.username, reason: reason.trim(), changes: ['re-opened by cashier after automatic close' + (wasClosedAt ? ' at ' + new Date(wasClosedAt).toLocaleString() : '')] };
+  const upd = { status: 'open', reopened: true, reopenedByCashier: true, reopenedAt: now, reopenedBy: currentUser.username, reopenReason: reason.trim(), autoClosedAt: wasClosedAt, editHistory: [...(Array.isArray(sh.editHistory) ? sh.editHistory : []), entry].slice(-30) };
+  try {
+    if(firebaseReady && currentLocationId && !String(id).startsWith('local_')){
+      const del = firebase.firestore.FieldValue.delete();
+      await db.collection('locations').doc(currentLocationId).collection('shifts').doc(id).update({ ...upd, closedAt: del, closedAtTime: del, closedBy: del });
+    }
+    Object.assign(sh, upd); delete sh.closedAt; delete sh.closedAtTime; delete sh.closedBy;
+    addLog('Re-open Shift (cashier)', `${sh.date} ${periodLabel(sh.period)} — ${currentUser.username} re-opened an auto-closed shift. Reason: ${reason.trim()}`);
+    showToast('Shift re-opened. Finish your counts and press End Shift.', 'success');
+    renderClosureView(); renderShifts();
+  } catch(e) { showToast('Could not re-open: ' + e.message, 'error'); }
 }
 function findTodaysShifts(){ const today = todayStr(); return allShifts.filter(sh => sh.date === today); }
 
@@ -1980,6 +2088,7 @@ function renderClosureView(){
   const todayShifts = findTodaysShifts();
   const startBox = document.getElementById('closureStartBox');
   const activeArea = document.getElementById('closureActiveArea');
+  renderReopenBox();
 
   if(todayOpen) {
     startBox.style.display = 'none';
@@ -2169,6 +2278,36 @@ function updateClosureExpense(idx, field, value){
   if(!currentShiftData.expenseItems[idx]) return;
   currentShiftData.expenseItems[idx][field] = value;
   recalcClosure(); saveClosureDraft();
+}
+
+/* DATE ORDERING FOR DAILY ROWS */
+function sortRowsByDate(rows){
+  if(!Array.isArray(rows)) return rows;
+  const pos = new Map(rows.map((r, i) => [r, i]));
+  rows.sort((a, b) => {
+    const da = a.date || '', db_ = b.date || '';
+    if(da !== db_){ if(!da) return 1; if(!db_) return -1; return da < db_ ? -1 : 1; }
+    const sa = typeof a.seq === 'number' ? a.seq : null, sb = typeof b.seq === 'number' ? b.seq : null;
+    if(sa !== null && sb !== null && sa !== sb) return sa - sb;
+    return pos.get(a) - pos.get(b);
+  });
+  return rows;
+}
+function flashRow(tbodyId, rowIdx){
+  setTimeout(() => {
+    const tb = document.getElementById(tbodyId); if(!tb || !tb.children[rowIdx]) return;
+    const tr = tb.children[rowIdx]; tr.classList.add('row-flash');
+    tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => tr.classList.remove('row-flash'), 1800);
+  }, 60);
+}
+function sortAllShifts(){
+  const rank = { morning: 0, afternoon: 1, evening: 2 };
+  allShifts.sort((a, b) => {
+    if(a.date !== b.date) return (b.date || '').localeCompare(a.date || '');
+    if(a.openedAt && b.openedAt) return b.openedAt.localeCompare(a.openedAt);
+    return (rank[b.period] ?? 0) - (rank[a.period] ?? 0);
+  });
 }
 
 /* PURCHASES PAID FROM TILL */
@@ -2453,7 +2592,7 @@ function renderShifts(){
       <td>${fmt(s.cashExpected || 0)}</td>
       <td>${fmt(s.counted || 0)}</td>
       <td class="${diffClass}">${diffLabel}</td>
-      <td>${statusBadge}</td>
+      <td>${statusBadge}${s.manualEntry ? ` <span class="badge-pill blue" title="Added by ${esc(s.createdBy||'manager')}${s.editHistory && s.editHistory[0] ? ' — ' + esc(s.editHistory[0].reason) : ''}">Manual</span>` : ''}${s.closedBy === 'auto' ? ' <span class="badge-pill amber" title="Closed automatically. The cashier never ended it.">Auto-closed</span>' : ''}${s.reopenedByCashier ? ` <span class="badge-pill blue" title="Re-opened by ${esc(s.reopenedBy||'cashier')}: ${esc(s.reopenReason||'')}">Re-opened</span>` : ''}${(!s.manualEntry && s.editedBy) ? ` <span class="badge-pill amber" title="Last edited by ${esc(s.editedBy)}${s.editHistory && s.editHistory.length ? ' — ' + esc(s.editHistory[s.editHistory.length-1].reason) : ''}">Edited</span>` : ''}</td>
       <td style="white-space:nowrap;">
         <button class="btn" style="padding:0.35rem 0.6rem;font-size:0.7rem;" onclick="viewShift('${s.id}')"><i class="fas fa-eye"></i></button>
         ${managerActions}
@@ -2557,6 +2696,8 @@ function showShiftSummary(sh){
       </div>
     </div>
 
+    ${Array.isArray(sh.editHistory) && sh.editHistory.length ? `<div class="section-title" style="margin-top:1.2rem;"><i class="fas fa-clock-rotate-left"></i> Change history</div>
+      <div style="display:grid;gap:0.5rem;">${sh.editHistory.slice().reverse().map(h => `<div style="background:#fff;border:1px solid #dfe9f3;border-radius:10px;padding:0.6rem 0.8rem;font-size:0.8rem;"><strong>${esc(h.by)}</strong> <span style="color:#6a7f94;">· ${new Date(h.at).toLocaleString()}</span><div style="margin-top:0.2rem;"><em>${esc(h.reason)}</em></div><div style="color:#5f7385;margin-top:0.2rem;">${(h.changes||[]).map(esc).join('; ') || 'Created'}</div></div>`).join('')}</div>` : ''}
     <div class="section-title" style="margin-top:1.2rem;"><i class="fas fa-truck-ramp-box"></i> Purchases paid from till (${pItems.length})</div>
     <div class="table-card" style="margin:0;">
       <div class="table-scroll">
@@ -2573,55 +2714,193 @@ function showShiftSummary(sh){
 }
 function closeShiftSummary(){ document.getElementById('shiftSummaryModal').classList.remove('active'); }
 
-async function editShift(id) {
-  if (!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')) { showToast('You do not have permission to edit shifts', 'error'); return; }
-  const sh = allShifts.find(s => s.id === id);
-  if (!sh) { showToast('Shift not found', 'error'); return; }
-  const newSales = prompt('Closing Sales (system total):', sh.closingSales ?? sh.sales ?? 0); if (newSales === null) return;
-  const newMtn = prompt('MTN MOMO amount:', sh.mtn ?? 0); if (newMtn === null) return;
-  const newAirtel = prompt('Airtel Money amount:', sh.airtel ?? 0); if (newAirtel === null) return;
-  const newExpenses = prompt('Total expenses paid from till:', sh.expenses ?? 0); if (newExpenses === null) return;
-  const newOpeningFloat = prompt('Opening float:', sh.openingFloat ?? 0); if (newOpeningFloat === null) return;
-  const newCounted = prompt('Cash Counted (physical):', sh.counted ?? 0); if (newCounted === null) return;
-  const newNote = prompt('Note (optional):', sh.note ?? ''); if (newNote === null) return;
-  const currentItems = Array.isArray(sh.expenseItems) ? sh.expenseItems : [];
-  const itemsJson = prompt('Expense breakdown (JSON array, leave unchanged to keep):', JSON.stringify(currentItems));
-  if (itemsJson === null) return;
-  let parsedItems = currentItems;
-  try { if (itemsJson.trim()) parsedItems = JSON.parse(itemsJson); if (!Array.isArray(parsedItems)) throw new Error('Not an array'); }
-  catch (e) { showToast('Invalid JSON in expense breakdown. Edit cancelled.', 'error'); return; }
-
-  const currentPurch = Array.isArray(sh.purchaseItems) ? sh.purchaseItems : [];
-  const purchJson = prompt('Purchases paid from till (JSON array of {supplier, description, amount}, leave unchanged to keep):', JSON.stringify(currentPurch));
-  if (purchJson === null) return;
-  let parsedPurch = currentPurch;
-  try { if (purchJson.trim()) parsedPurch = JSON.parse(purchJson); if (!Array.isArray(parsedPurch)) throw new Error('Not an array'); }
-  catch (e) { showToast('Invalid JSON in purchases. Edit cancelled.', 'error'); return; }
-  const purchasesPaid = parsedPurch.reduce((t, x) => t + (parseFloat(x.amount) || 0), 0);
-
-  const mtn = parseFloat(newMtn) || 0;
-  const airtel = parseFloat(newAirtel) || 0;
-  const closingSales = parseFloat(newSales) || 0;
-  const expenses = parseFloat(newExpenses) || 0;
-  const openingFloat = parseFloat(newOpeningFloat) || 0;
-  const counted = parseFloat(newCounted) || 0;
-  const sales = closingSales;
-  const _b = parseFloat(sh.bank)||0, _c = parseFloat(sh.creditSales)||0, _r = parseFloat(sh.creditRepay)||0;
-  const cashExpected = openingFloat + (sales - mtn - airtel - _b - _c) + _r - expenses - purchasesPaid;
-  const difference = counted - cashExpected;
-
-  const updated = { ...sh, mtn, airtel, closingSales, expenses, openingFloat, counted, sales, cashExpected, difference, note: newNote, expenseItems: parsedItems, purchasesPaid, purchaseItems: parsedPurch, editedAt: new Date().toISOString(), editedBy: currentUser.username };
+/* SHIFT EDITOR (manager): change cashier, date, period, times, amounts, items; or add a shift that was never logged */
+let sfState = null, locationUsersCache = null;
+async function sfLoadUsers(){
+  if(locationUsersCache && locationUsersCache.loc === currentLocationId) return locationUsersCache.list;
+  const list = [];
   try {
-    if (firebaseReady && currentLocationId && !id.startsWith('local_')) {
-      await db.collection('locations').doc(currentLocationId).collection('shifts').doc(id).set(updated, { merge: true });
+    const snap = await db.collection('users').where('locationId', '==', currentLocationId).get();
+    snap.forEach(d => { const u = d.data(); list.push({ username: u.username || d.id, fullName: u.fullName || '', role: u.role || 'cashier', status: u.status || 'active' }); });
+  } catch(e) { console.warn('Could not load users', e); }
+  list.sort((a, b) => (a.fullName || a.username).localeCompare(b.fullName || b.username));
+  locationUsersCache = { loc: currentLocationId, list };
+  return list;
+}
+function _hm(iso){ if(!iso) return ''; const d = new Date(iso); if(isNaN(d)) return ''; return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function _isoLocal(dateStr, hm){ if(!dateStr || !hm) return ''; const d = new Date(dateStr + 'T' + hm + ':00'); return isNaN(d) ? '' : d.toISOString(); }
+function sfItemsFrom(sh, itemsKey, totalKey, fallbackItem){
+  const items = Array.isArray(sh && sh[itemsKey]) ? sh[itemsKey].map(x => ({ ...x })) : [];
+  const total = parseFloat(sh && sh[totalKey]) || 0;
+  if(!items.length && total > 0) items.push({ ...fallbackItem, amount: total });
+  return items;
+}
+async function addMissingShift(){ return openShiftForm('add'); }
+async function editShift(id){ return openShiftForm('edit', id); }
+async function openShiftForm(mode, id){
+  if(!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')){ showToast('You do not have permission to change shifts', 'error'); return; }
+  let sh = null;
+  if(mode === 'edit'){ sh = allShifts.find(x => x.id === id); if(!sh){ showToast('Shift not found', 'error'); return; } }
+  const users = await sfLoadUsers();
+  sfState = {
+    mode, id: id || null, original: sh ? JSON.parse(JSON.stringify(sh)) : null,
+    expenseItems: sfItemsFrom(sh, 'expenseItems', 'expenses', { type: 'Other', description: 'Unitemised expenses (carried over)' }),
+    purchaseItems: sfItemsFrom(sh, 'purchaseItems', 'purchasesPaid', { supplier: '', description: 'Unitemised purchases (carried over)' }),
+    startHM: sh ? _hm(sh.openedAt) : '', endHM: sh ? _hm(sh.closedAt) : ''
+  };
+  const $ = x => document.getElementById(x);
+  const curUser = sh ? (sh.cashier || '') : '';
+  const opts = users.map(u => `<option value="${esc(u.username)}">${esc(u.fullName || u.username)} (${esc(u.role)})${u.status === 'suspended' ? ' — suspended' : ''}</option>`);
+  if(curUser && !users.some(u => u.username === curUser)) opts.unshift(`<option value="${esc(curUser)}">${esc((sh && sh.cashierName) || curUser)} (former user)</option>`);
+  if(mode === 'add') opts.unshift('<option value="">Select cashier…</option>');
+  $('sfCashier').innerHTML = opts.join('');
+  $('sfCashier').value = curUser;
+  const status = sh ? sh.status : 'closed';
+  $('sfStatus').innerHTML = (status === 'open' ? '<option value="open">Open</option>' : '') + '<option value="closed">Closed</option>';
+  $('sfStatus').value = status;
+  $('sfDate').value = sh ? sh.date : todayStr();
+  $('sfPeriod').value = sh && isValidPeriod(sh.period) ? sh.period : periodFromClock();
+  $('sfStart').value = sfState.startHM; $('sfEnd').value = sfState.endHM;
+  const num = v => (v === undefined || v === null) ? '' : v;
+  $('sfSales').value = sh ? num(sh.closingSales ?? sh.sales) : ''; $('sfMtn').value = sh ? num(sh.mtn) : ''; $('sfAirtel').value = sh ? num(sh.airtel) : '';
+  $('sfBank').value = sh ? num(sh.bank) : ''; $('sfCreditSales').value = sh ? num(sh.creditSales) : ''; $('sfCreditRepay').value = sh ? num(sh.creditRepay) : '';
+  $('sfVoids').value = sh ? num(sh.voids) : ''; $('sfOpening').value = sh ? num(sh.openingFloat) : ''; $('sfCounted').value = sh ? num(sh.counted) : '';
+  $('sfNote').value = sh ? (sh.note || '') : ''; $('sfReason').value = '';
+  $('sfTitle').innerHTML = mode === 'add' ? '<i class="fas fa-plus-circle"></i> Add missing shift' : '<i class="fas fa-pen-to-square"></i> Edit shift';
+  $('sfSub').textContent = mode === 'add' ? 'Use this when a shift was worked but never logged in the app.' : `${sh.date} · ${periodLabel(sh.period)} · logged under ${sh.cashierName || sh.cashier || '—'}`;
+  $('sfReasonLabel').textContent = mode === 'add' ? 'Why was this shift not logged? (required)' : 'Reason for this change (required)';
+  $('sfSaveBtn').innerHTML = mode === 'add' ? '<i class="fas fa-save"></i> Add shift' : '<i class="fas fa-save"></i> Save changes';
+  sfRenderLists(); sfPreview();
+  $('shiftFormModal').classList.add('active');
+}
+function closeShiftForm(){ document.getElementById('shiftFormModal').classList.remove('active'); sfState = null; }
+function sfRenderLists(){
+  if(!sfState) return;
+  const names = [...new Set([...(suppliersCache || []).map(x => x.name), ...allPurchasesList().map(x => x.supplier)].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const dl = `<datalist id="sfSupplierList">${names.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
+  document.getElementById('sfExpList').innerHTML = (sfState.expenseItems.length ? sfState.expenseItems.map((e, i) => `<div class="closure-expense-row">
+      <select onchange="sfSetItem('expenseItems',${i},'type',this.value)">${CLOSURE_EXPENSE_TYPES.map(t => `<option value="${t}" ${e.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      <input type="text" value="${esc(e.description)}" placeholder="Description" onchange="sfSetItem('expenseItems',${i},'description',this.value)">
+      <input type="number" step="0.01" class="amt" value="${e.amount ?? ''}" placeholder="0" oninput="sfSetItem('expenseItems',${i},'amount',this.value)">
+      <button type="button" class="remove-btn" onclick="sfRemoveItem('expenseItems',${i})"><i class="fas fa-trash-alt"></i></button></div>`).join('')
+    : '<div class="closure-expense-empty">No expenses.</div>');
+  document.getElementById('sfPurList').innerHTML = (sfState.purchaseItems.length ? sfState.purchaseItems.map((p, i) => `<div class="closure-purchase-row">
+      <input type="text" list="sfSupplierList" value="${esc(p.supplier)}" placeholder="Supplier" onchange="sfSetItem('purchaseItems',${i},'supplier',this.value)">
+      <input type="text" value="${esc(p.description)}" placeholder="What was bought" onchange="sfSetItem('purchaseItems',${i},'description',this.value)">
+      <input type="number" step="0.01" class="amt" value="${p.amount ?? ''}" placeholder="0" oninput="sfSetItem('purchaseItems',${i},'amount',this.value)">
+      <button type="button" class="remove-btn" onclick="sfRemoveItem('purchaseItems',${i})"><i class="fas fa-trash-alt"></i></button></div>`).join('') + dl
+    : '<div class="closure-purchase-empty">No purchases paid from till.</div>' + dl);
+}
+function sfAddExpense(){ if(!sfState) return; sfState.expenseItems.push({ type: 'Other', description: '', amount: 0 }); sfRenderLists(); sfPreview(); }
+function sfAddPurchase(){ if(!sfState) return; sfState.purchaseItems.push({ supplier: '', description: '', amount: 0 }); sfRenderLists(); sfPreview(); }
+function sfRemoveItem(key, i){ if(!sfState) return; sfState[key].splice(i, 1); sfRenderLists(); sfPreview(); }
+function sfSetItem(key, i, field, value){ if(!sfState || !sfState[key][i]) return; sfState[key][i][field] = field === 'amount' ? (value === '' ? 0 : parseFloat(value) || 0) : value; if(field === 'amount') sfPreview(); }
+function sfValues(){
+  const g = id => parseFloat(document.getElementById(id).value) || 0;
+  const expenses = sfState.expenseItems.reduce((t, x) => t + (parseFloat(x.amount) || 0), 0);
+  const purchasesPaid = sfState.purchaseItems.reduce((t, x) => t + (parseFloat(x.amount) || 0), 0);
+  const v = { closingSales: g('sfSales'), mtn: g('sfMtn'), airtel: g('sfAirtel'), bank: g('sfBank'), creditSales: g('sfCreditSales'), creditRepay: g('sfCreditRepay'), voids: g('sfVoids'), openingFloat: g('sfOpening'), counted: g('sfCounted'), expenses, purchasesPaid };
+  v.sales = v.closingSales;
+  v.cashExpected = v.openingFloat + (v.sales - v.mtn - v.airtel - v.bank - v.creditSales) + v.creditRepay - v.expenses - v.purchasesPaid;
+  v.difference = v.counted - v.cashExpected;
+  return v;
+}
+function sfPreview(){
+  if(!sfState) return;
+  const v = sfValues(), d = v.difference;
+  document.getElementById('sfPreview').innerHTML = `<div>Expenses <strong>UGX ${fmt(v.expenses)}</strong></div><div>Purchases <strong>UGX ${fmt(v.purchasesPaid)}</strong></div><div>Cash expected <strong>UGX ${fmt(v.cashExpected)}</strong></div><div>Cash counted <strong>UGX ${fmt(v.counted)}</strong></div><div>Difference <strong style="color:${d < 0 ? '#b33a3a' : d > 0 ? '#1d7a4b' : '#0b2b44'};">${d === 0 ? 'Balanced' : fmtSigned(d)}</strong></div>`;
+}
+/* Pure: builds the updated shift record and a readable list of what changed. */
+function sfBuild(state, f, users, actor, nowIso){
+  const orig = state.original || {};
+  const u = users.find(x => x.username === f.cashier);
+  const cashierName = (u && (u.fullName || u.username)) || (f.cashier === orig.cashier ? (orig.cashierName || f.cashier) : f.cashier);
+  const v = f.values;
+  const next = {
+    ...orig, date: f.date, period: f.period, cashier: f.cashier, cashierName,
+    mtn: v.mtn, airtel: v.airtel, bank: v.bank, creditSales: v.creditSales, creditRepay: v.creditRepay, voids: v.voids,
+    closingSales: v.closingSales, sales: v.sales, openingFloat: v.openingFloat, counted: v.counted,
+    expenses: v.expenses, expenseItems: state.expenseItems.map(x => ({ ...x, amount: parseFloat(x.amount) || 0 })),
+    purchasesPaid: v.purchasesPaid, purchaseItems: state.purchaseItems.map(x => ({ ...x, amount: parseFloat(x.amount) || 0 })),
+    cashExpected: v.cashExpected, difference: v.difference, note: f.note, status: f.status
+  };
+  delete next.id;
+  // start time
+  if(f.start){
+    if(f.start === state.startHM && f.date === orig.date && orig.openedAt) next.openedAt = orig.openedAt;
+    else next.openedAt = _isoLocal(f.date, f.start) || orig.openedAt;
+    next.openedAtTime = f.start;
+  } else if(!orig.openedAt){ delete next.openedAt; }
+  // end time
+  if(f.status === 'closed'){
+    let closedIso = '';
+    if(f.end){
+      if(f.end === state.endHM && f.date === orig.date && orig.closedAt) closedIso = orig.closedAt;
+      else { closedIso = _isoLocal(f.date, f.end); if(closedIso && next.openedAt && closedIso < next.openedAt){ const d = new Date(closedIso); d.setDate(d.getDate() + 1); closedIso = d.toISOString(); } }
     }
-    const idx = allShifts.findIndex(s => s.id === id);
-    if (idx >= 0) allShifts[idx] = updated;
-    addLog('Edit Shift', `Shift ${sh.date} ${periodLabel(sh.period)} edited by ${currentUser.username} — sales ${fmt(sh.closingSales ?? sh.sales)}→${fmt(closingSales)}, counted ${fmt(sh.counted)}→${fmt(counted)}, expenses ${fmt(sh.expenses)}→${fmt(expenses)}, purchases ${fmt(sh.purchasesPaid||0)}→${fmt(purchasesPaid)}, diff ${fmtSigned(sh.difference)}→${fmtSigned(difference)}`);
-    showToast('Shift updated', 'success');
+    next.closedAt = closedIso || orig.closedAt || nowIso;
+    next.closedAtTime = f.end || _hm(next.closedAt);
+    next.closedBy = orig.closedBy || actor;
+  }
+  next.clockPeriodAtStart = next.openedAt ? periodFromTimestamp(next.openedAt) : f.period;
+  if(f.period !== orig.period || f.cashier !== orig.cashier || !state.original) next.periodSource = 'manager';
+  // readable change list
+  const changes = [];
+  const chg = (label, a, b) => { if(String(a ?? '') !== String(b ?? '')) changes.push(`${label}: ${a === undefined || a === '' ? '—' : a} → ${b === '' ? '—' : b}`); };
+  if(state.original){
+    chg('cashier', orig.cashierName || orig.cashier, next.cashierName);
+    chg('date', orig.date, next.date); chg('period', periodLabel(orig.period), periodLabel(next.period));
+    chg('start', _hm(orig.openedAt), _hm(next.openedAt)); chg('end', _hm(orig.closedAt), _hm(next.closedAt));
+    chg('status', orig.status, next.status);
+    chg('sales', fmt(orig.closingSales ?? orig.sales ?? 0), fmt(next.closingSales));
+    [['MTN','mtn'],['Airtel','airtel'],['bank','bank'],['credit sales','creditSales'],['credit repaid','creditRepay'],['voids','voids'],['float','openingFloat'],['counted','counted'],['expenses','expenses'],['purchases','purchasesPaid']]
+      .forEach(([l, k]) => chg(l, fmt(orig[k] || 0), fmt(next[k] || 0)));
+    chg('note', orig.note || '', next.note || '');
+    if(JSON.stringify(orig.expenseItems || []) !== JSON.stringify(next.expenseItems) && (orig.expenses || 0) === next.expenses) changes.push('expense lines edited');
+    if(JSON.stringify(orig.purchaseItems || []) !== JSON.stringify(next.purchaseItems) && (orig.purchasesPaid || 0) === next.purchasesPaid) changes.push('purchase lines edited');
+  } else {
+    changes.push(`added for ${next.cashierName}, ${next.date} ${periodLabel(next.period)}, sales ${fmt(next.sales)}, counted ${fmt(next.counted)}`);
+  }
+  return { next, changes };
+}
+async function saveShiftForm(){
+  if(!sfState) return;
+  if(!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')){ showToast('You do not have permission to change shifts', 'error'); return; }
+  const $ = x => document.getElementById(x);
+  const reason = $('sfReason').value.trim();
+  const date = $('sfDate').value, cashier = $('sfCashier').value;
+  if(!date){ showToast('Pick the shift date', 'error'); return; }
+  if(!cashier){ showToast('Pick the cashier', 'error'); return; }
+  const users = await sfLoadUsers();
+  const f = { cashier, date, period: $('sfPeriod').value, start: $('sfStart').value, end: $('sfEnd').value, status: $('sfStatus').value, note: $('sfNote').value.trim(), values: sfValues() };
+  const nowIso = new Date().toISOString();
+  const { next, changes } = sfBuild(sfState, f, users, currentUser.username, nowIso);
+  if(sfState.mode === 'edit' && !changes.length){ showToast('No changes to save'); return; }
+  if(reason.length < 3){ showToast('Please give a short reason. It is kept in the shift history.', 'error'); $('sfReason').focus(); return; }
+  const dup = allShifts.find(x => x.id !== sfState.id && x.date === next.date && x.period === next.period && x.cashier === next.cashier);
+  if(dup && !confirm(`${next.cashierName} already has a ${periodLabel(next.period)} shift on ${next.date}. Save anyway?`)) return;
+  const entry = { at: nowIso, by: currentUser.username, reason, changes };
+  next.editHistory = [...(Array.isArray(next.editHistory) ? next.editHistory : []), entry].slice(-30);
+  try {
+    let id = sfState.id;
+    if(sfState.mode === 'add'){
+      next.manualEntry = true; next.createdBy = currentUser.username; next.createdAt = nowIso;
+      if(firebaseReady && currentLocationId){ const ref = await db.collection('locations').doc(currentLocationId).collection('shifts').add(next); id = ref.id; } else id = 'local_' + Date.now();
+      allShifts.push({ ...next, id });
+      addLog('Add Missing Shift', `${next.date} ${periodLabel(next.period)} — ${next.cashierName}, sales ${fmt(next.sales)}, counted ${fmt(next.counted)}. Reason: ${reason}`);
+    } else {
+      next.editedAt = nowIso; next.editedBy = currentUser.username;
+      if(firebaseReady && currentLocationId && !String(id).startsWith('local_')){ await db.collection('locations').doc(currentLocationId).collection('shifts').doc(id).set(next, { merge: true }); }
+      const i = allShifts.findIndex(x => x.id === id); if(i >= 0) allShifts[i] = { ...next, id };
+      addLog('Edit Shift', `${next.date} ${periodLabel(next.period)} (${next.cashierName}) — ${changes.join('; ')}. Reason: ${reason}`);
+    }
+    sortAllShifts();
+    const wasAdd = sfState.mode === 'add';
+    closeShiftForm();
+    showToast(wasAdd ? 'Shift added' : 'Shift saved', 'success');
     renderShifts();
-    if (currentShiftId === id) { currentShiftData = updated; renderClosurePanel(); }
-  } catch (e) { showToast('Failed to update shift: ' + e.message, 'error'); }
+    if(currentShiftId && currentShiftId === id){ currentShiftData = { ...next, id }; renderClosurePanel(); }
+  } catch(e) { showToast('Could not save shift: ' + e.message, 'error'); }
 }
 
 async function deleteShift(id) {
@@ -3377,9 +3656,11 @@ function updateField(idx,field,value){
   if(!hasPerm('editDaily')) { showToast('No permission', 'error'); return; }
   if(allMonthsData[currentMonthKey]?.closed) return;
   const entries = currentEntries();
+  const movedRow = entries[idx];
   if(field==='cost'||field==='sales'||field==='expenses') entries[idx][field] = value===''?0:parseFloat(value); else entries[idx][field] = value;
-  if(field === 'date') entries[idx].day = dayName(value);
+  if(field === 'date'){ entries[idx].day = dayName(value); sortRowsByDate(entries); }
   renderTable(); renderSummary(); renderTotals(); scheduleSave();
+  if(field === 'date'){ const ni = entries.indexOf(movedRow); if(ni !== idx) flashRow('tableBody', ni); }
 }
 function addRow(){
   if(!hasPerm('editDaily')) { showToast('No permission', 'error'); return; }
@@ -3387,6 +3668,7 @@ function addRow(){
   const entries = currentEntries(); const last = entries[entries.length-1];
   let newDate = ''; if(last && last.date){ const d = new Date(last.date); d.setDate(d.getDate()+1); newDate = d.toISOString().split('T')[0]; } else newDate = currentMonthKey + '-01';
   entries.push({day:dayName(newDate),date:newDate,cost:0,sales:0,expenses:0});
+  sortRowsByDate(entries);
   renderTable(); renderSummary(); renderTotals(); scheduleSave();
 }
 function removeRow(idx){
@@ -3516,9 +3798,12 @@ function updatePurchase(idx,field,value){
   if(!hasPerm('editPurchases')) { showToast('No permission', 'error'); return; }
   if(allMonthsData[currentMonthKey]?.closed) return;
   const purchases = currentPurchases();
+  const movedRow = purchases[idx];
   if(field==='total'){ purchases[idx][field] = value===''?0:parseFloat(value); }
   else purchases[idx][field] = value;
+  if(field === 'date') sortRowsByDate(purchases);
   renderPurchases(); scheduleSave();
+  if(field === 'date'){ const ni = purchases.indexOf(movedRow); if(ni !== idx) flashRow('purchasesBody', ni); }
 }
 function addPurchaseRow(){
   if(!hasPerm('editPurchases')) { showToast('No permission', 'error'); return; }
@@ -3527,6 +3812,7 @@ function addPurchaseRow(){
   let newDate = new Date().toISOString().split('T')[0];
   if(purchases.length && purchases[purchases.length-1].date) newDate = purchases[purchases.length-1].date;
   purchases.push({date:newDate,supplier:'',total:0,payment:'Cash',reference:''});
+  sortRowsByDate(purchases);
   addLog('Add Purchase', `New purchase for ${newDate}`);
   renderPurchases(); scheduleSave();
   setTimeout(()=>{ const t = document.getElementById('purchasesBody'); if(t && t.lastElementChild) t.lastElementChild.scrollIntoView({behavior:'smooth',block:'center'}); },100);
@@ -3608,6 +3894,7 @@ function computeAuditFlags(){
 function renderAudit(){
   try { renderTodayChecks(); } catch(e) { console.warn('Today checks failed', e); }
   const monthIsClosed = !!(allMonthsData[currentMonthKey] && allMonthsData[currentMonthKey].closed);
+  weeklyClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
   const audit = computeAuditFlags().filter(r => String(r.date||'').slice(0,7) === currentMonthKey).reverse();
   const stEl = document.getElementById('auditClosedStatus');
   if(stEl){ stEl.innerHTML = monthIsClosed ? '<i class="fas fa-lock"></i> Closed' : '<i class="fas fa-lock-open"></i> Open'; stEl.style.color = monthIsClosed ? '#b33a3a' : '#1d7a4b'; }
@@ -4355,6 +4642,11 @@ function runAuditWithRange(){
     const unrec = Object.entries(tillByDate).filter(([d,v]) => v - (cashByDate[d] || 0) > Math.max(5000, v * 0.1));
     if(unrec.length) issues[unrec.length >= 3 ? 'red' : 'amber'].push({title:'Till purchases not recorded in Daily Purchases', desc:`${unrec.length} day(s): ${unrec.slice(0,5).map(([d,v]) => `${d} (till ${fmt(v)} vs recorded cash purchases ${fmt(cashByDate[d] || 0)})`).join('; ')}. Purchase cost may be understated.`});
   }
+  const autoShifts = shiftsInRange.filter(x => x.closedBy === 'auto');
+  if(autoShifts.length) issues.amber.push({title:'Shifts closed automatically', desc:`<strong>${autoShifts.length}</strong> shift(s) were never ended by the cashier, so their figures are whatever was last saved as a draft (${autoShifts.slice(0,4).map(x => `${x.date} ${esc(x.cashierName || x.cashier || '?')}`).join('; ')}). Ask the cashier to re-open (if recent) or correct them from Shifts History.`});
+  const reopenBy = {}; shiftsInRange.filter(x => x.reopenedByCashier).forEach(x => { const k = x.cashierName || x.cashier || '?'; reopenBy[k] = (reopenBy[k] || 0) + 1; });
+  const frequent = Object.entries(reopenBy).filter(([k,c]) => c >= 3);
+  if(frequent.length) issues.amber.push({title:'Frequent shift re-opens', desc:frequent.map(([k,c]) => `${esc(k)} re-opened ${c} auto-closed shifts`).join('; ') + '. Check that late finishes are genuine.'});
   const dm = {}; shiftsInRange.forEach(x => { dm[x.date] = dm[x.date] || {t:0,d:0,h:false}; dm[x.date].t += _n(x.expenses); });
   allEntries.forEach(e => { if(dm[e.date]){ dm[e.date].d += _n(e.expenses); dm[e.date].h = true; } });
   const dBad = Object.entries(dm).filter(([d,v]) => v.h && Math.abs(v.t - v.d) > Math.max(5000, v.t * 0.1));
