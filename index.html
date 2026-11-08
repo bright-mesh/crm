@@ -438,6 +438,13 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .sf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;}
 .sf-field label{display:block;font-size:0.68rem;font-weight:700;color:#5f7385;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.25rem;}
 .sf-field input,.sf-field select,.sf-field textarea{width:100%;padding:0.55rem 0.6rem;border-radius:8px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.85rem;background:#fff;}
+.fm-hint{font-size:0.72rem;color:#7b8fa0;margin-top:0.3rem;}
+.fm-hint a{color:#0b5a8a;font-weight:700;cursor:pointer;text-decoration:underline;}
+.fm-note{margin-bottom:0.9rem;font-size:0.82rem;color:#35506a;background:#eef6ff;border:1px solid #b9d6f0;border-radius:12px;padding:0.65rem 0.9rem;}
+.fm-note.danger{background:#fff1f1;border-color:#f0c4c4;color:#8a2b2b;}
+.fm-live{margin-top:0.8rem;font-size:0.8rem;color:#7a5200;background:#fff6e0;border:1px solid #f0d58a;border-radius:12px;padding:0.55rem 0.8rem;}
+.fm-live:empty{display:none;}
+.fm-error{margin-top:0.8rem;font-size:0.8rem;color:#b33a3a;background:#fdeeee;border:1px solid #f3c6c6;border-radius:10px;padding:0.5rem 0.8rem;display:none;}
 .link-btn{background:#fff;border:1px solid #d2dfeb;color:#7b8fa0;border-radius:8px;padding:0.35rem 0.45rem;cursor:pointer;font-size:0.8rem;flex:0 0 auto;}
 .link-btn.on{background:#e6f4ec;border-color:#a9d8bb;color:#1d7a4b;}
 .link-btn:disabled{opacity:0.5;cursor:not-allowed;}
@@ -1288,6 +1295,25 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       <button class="modal-close" onclick="closeShiftSummary()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" id="shiftSummaryBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="formModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div><h2 id="fmTitle">Edit</h2><div class="sub" id="fmSub"></div></div>
+      <button class="modal-close" onclick="cancelFormModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="fmIntro"></div>
+      <div class="sf-grid" id="fmFields"></div>
+      <div class="fm-live" id="fmLive"></div>
+      <div class="fm-error" id="fmError"></div>
+      <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:1.1rem;">
+        <button class="btn" onclick="cancelFormModal()">Cancel</button>
+        <button class="btn btn-primary" id="fmSubmit" onclick="submitFormModal()">Save</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2158,9 +2184,14 @@ async function cashierReopenShift(id){
   const sh = allShifts.find(x => x.id === id);
   if(!cashierCanReopen(sh)){ showToast('This shift can no longer be re-opened by you. Please ask your manager to correct it.', 'error'); return; }
   if(allShifts.some(x => x.cashier === currentUser.username && x.status === 'open')){ showToast('End your current open shift first, or ask your manager to correct the earlier one.', 'error'); return; }
-  const reason = prompt('Why are you re-opening this shift? (e.g. customers delayed me past midnight)');
-  if(reason === null) return;
-  if(reason.trim().length < 3){ showToast('Please give a short reason', 'error'); return; }
+  const rv = await askForm({
+    title: 'Re-open your shift', icon: 'fa-lock-open', subtitle: `${sh.date} · ${periodLabel(sh.period)}`, submitLabel: 'Re-open shift',
+    note: 'This shift was closed automatically. If you were still serving customers, re-open it to finish your counts. You can do this once, and your manager will see the reason.',
+    fields: [{ name: 'reason', label: 'Why are you re-opening it?', type: 'textarea', placeholder: 'e.g. Customers delayed me past midnight', required: true }],
+    validate: v => v.reason.trim().length < 3 ? 'Please give a short reason' : ''
+  });
+  if(!rv) return;
+  const reason = rv.reason;
   const now = new Date().toISOString();
   const wasClosedAt = sh.closedAt || null;
   const entry = { at: now, by: currentUser.username, reason: reason.trim(), changes: ['re-opened by cashier after automatic close' + (wasClosedAt ? ' at ' + new Date(wasClosedAt).toLocaleString() : '')] };
@@ -2373,6 +2404,70 @@ function updateClosureExpense(idx, field, value){
   if(!currentShiftData.expenseItems[idx]) return;
   currentShiftData.expenseItems[idx][field] = value;
   recalcClosure(); saveClosureDraft();
+}
+
+/* ONE REUSABLE EDIT WINDOW (replaces chains of prompt boxes) */
+let _fm = null;
+function askForm(cfg){
+  return new Promise(resolve => {
+    if(_fm){ const prev = _fm.resolve; _fm = null; prev(null); }
+    _fm = { cfg, resolve };
+    const $ = id => document.getElementById(id);
+    $('fmTitle').innerHTML = `<i class="fas ${cfg.icon || 'fa-pen-to-square'}"></i> ${esc(cfg.title)}`;
+    $('fmSub').textContent = cfg.subtitle || '';
+    $('fmIntro').innerHTML = cfg.note ? `<div class="fm-note ${cfg.danger ? 'danger' : ''}">${cfg.note}</div>` : '';
+    $('fmFields').innerHTML = cfg.fields.map(f => {
+      const id = 'fm_' + f.name, span = f.half ? '' : 'grid-column:1/-1;';
+      let input;
+      if(f.type === 'select') input = `<select id="${id}">${f.options.map(o => `<option value="${esc(o.value)}" ${String(o.value) === String(f.value) ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
+      else if(f.type === 'textarea') input = `<textarea id="${id}" rows="3" placeholder="${esc(f.placeholder || '')}">${esc(f.value || '')}</textarea>`;
+      else input = `<input id="${id}" type="${f.type || 'text'}" ${f.type === 'number' ? 'step="0.01"' : ''} value="${esc(f.value ?? '')}" placeholder="${esc(f.placeholder || '')}" autocomplete="off">`;
+      return `<div class="sf-field" style="${span}"><label for="${id}">${esc(f.label)}${f.required ? ' *' : ''}</label>${input}${f.hint ? `<div class="fm-hint">${f.hint}</div>` : ''}${f.fill ? `<div class="fm-hint"><a onclick="fmFill('${f.name}')">${esc(f.fill.label)}</a></div>` : ''}</div>`;
+    }).join('');
+    $('fmError').style.display = 'none'; $('fmLive').innerHTML = '';
+    const sub = $('fmSubmit'); sub.textContent = cfg.submitLabel || 'Save'; sub.className = 'btn ' + (cfg.danger ? 'btn-danger' : 'btn-primary');
+    $('fmFields').querySelectorAll('input,select,textarea').forEach(el => {
+      el.addEventListener('input', fmRefreshLive); el.addEventListener('change', fmRefreshLive);
+      el.addEventListener('keydown', e => { if(e.key === 'Enter' && el.tagName !== 'TEXTAREA'){ e.preventDefault(); submitFormModal(); } });
+    });
+    $('formModal').classList.add('active');
+    fmRefreshLive();
+    const first = $('fmFields').querySelector('input,select,textarea'); if(first) setTimeout(() => { try { first.focus(); if(first.select && first.type !== 'password') first.select(); } catch(e){} }, 30);
+  });
+}
+function fmValues(){
+  const v = {}; if(!_fm) return v;
+  _fm.cfg.fields.forEach(f => { const el = document.getElementById('fm_' + f.name); v[f.name] = el ? el.value : ''; });
+  return v;
+}
+function fmRefreshLive(){
+  if(!_fm) return;
+  const box = document.getElementById('fmLive'), err = document.getElementById('fmError');
+  err.style.display = 'none';
+  box.innerHTML = _fm.cfg.onInput ? (_fm.cfg.onInput(fmValues()) || '') : '';
+}
+function fmFill(name){
+  if(!_fm) return; const f = _fm.cfg.fields.find(x => x.name === name); const el = document.getElementById('fm_' + name);
+  if(f && f.fill && el){ el.value = f.fill.value; fmRefreshLive(); }
+}
+function fmShowError(msg){ const e = document.getElementById('fmError'); e.textContent = msg; e.style.display = 'block'; }
+function submitFormModal(){
+  if(!_fm) return;
+  const cfg = _fm.cfg, vals = fmValues();
+  for(const f of cfg.fields){
+    if(f.required && !String(vals[f.name] || '').trim()){ fmShowError(`${f.label} is required`); const el = document.getElementById('fm_' + f.name); if(el) el.focus(); return; }
+  }
+  const err = cfg.validate ? cfg.validate(vals) : '';
+  if(err){ fmShowError(err); return; }
+  const resolve = _fm.resolve; _fm = null;
+  document.getElementById('formModal').classList.remove('active');
+  resolve(vals);
+}
+function cancelFormModal(){
+  if(!_fm) return;
+  const resolve = _fm.resolve; _fm = null;
+  document.getElementById('formModal').classList.remove('active');
+  resolve(null);
 }
 
 /* DATE ORDERING FOR DAILY ROWS */
@@ -3236,8 +3331,14 @@ async function deleteLocationConfirm(id){
   const breakdown = LOCATION_SUBCOLLECTIONS.map(k => `${k}: ${counts[k]}`).join('\n  ');
   const firstConfirm = confirm(`Delete location "${l.name || id}"?\n\nThis will permanently delete:\n  • The location document\n  • ${usersHere.length} user account(s)\n  • ${totalDocs} record(s):\n  ${breakdown}\n\nContinue?`);
   if(!firstConfirm) return;
-  const typed = prompt(`Type the location code "${id}" to confirm permanent deletion.`);
-  if(typed !== id){ showToast('Deletion cancelled — code did not match', 'error'); return; }
+  const typed = await askForm({
+    title: 'Delete location permanently', icon: 'fa-triangle-exclamation', danger: true, submitLabel: 'Delete permanently',
+    subtitle: l.name || id,
+    note: `This cannot be undone. All records and user accounts for this location will be deleted (${totalDocs} record(s), ${usersHere.length} user account(s)).`,
+    fields: [{ name: 'code', label: `Type the location code ${id} to confirm`, placeholder: id, required: true }],
+    validate: v => v.code.trim() !== id ? 'The code does not match' : ''
+  });
+  if(!typed){ showToast('Deletion cancelled'); return; }
   showSaveStatus('saving','Deleting location data...','admin');
   let deletedDocs = 0; let deletedUsers = 0; const errors = [];
   for(const sub of LOCATION_SUBCOLLECTIONS){
@@ -3496,11 +3597,24 @@ async function reloadSuppliers(){
 async function editSupplier(id){
   if(!hasPerm('editPurchases')){ showToast('No permission', 'error'); return; }
   const s = suppliersCache.find(x => x.id === id); if(!s) return;
-  let newName = prompt('Supplier name:', s.name || ''); if(newName === null) return;
-  newName = newName.trim(); if(!newName){ showToast('Supplier name required', 'error'); return; }
-  const newContact = prompt('Contact person (optional):', s.contact || ''); if(newContact === null) return;
-  const newPhone = prompt('Phone (optional):', s.phone || ''); if(newPhone === null) return;
-  const newCategory = prompt('Category (optional):', s.category || ''); if(newCategory === null) return;
+  const refs0 = countSupplierRefs(s.name);
+  const fv = await askForm({
+    title: 'Edit supplier', icon: 'fa-address-book', subtitle: s.name || '', submitLabel: 'Save supplier',
+    fields: [
+      { name: 'name', label: 'Supplier name', value: s.name || '', required: true },
+      { name: 'contact', label: 'Contact person (optional)', value: s.contact || '', half: true },
+      { name: 'phone', label: 'Phone (optional)', value: s.phone || '', half: true },
+      { name: 'category', label: 'Category (optional)', value: s.category || '' }
+    ],
+    onInput: vals => {
+      const n = (vals.name || '').trim(); if(!n || n === (s.name || '').trim()) return '';
+      const target = suppliersCache.find(x => x.id !== id && (x.name || '').trim().toLowerCase() === n.toLowerCase());
+      if(target) return `<i class="fas fa-code-merge"></i> A supplier called <strong>${esc(target.name)}</strong> already exists. Saving will merge this one into it.`;
+      return refs0.total ? `<i class="fas fa-triangle-exclamation"></i> Renaming also corrects ${esc(describeSupplierRefs(refs0))} that use the old name.` : '';
+    }
+  });
+  if(!fv) return;
+  const newName = fv.name.trim(), newContact = fv.contact.trim(), newPhone = fv.phone.trim(), newCategory = fv.category.trim();
   const ref = db.collection('locations').doc(currentLocationId).collection('suppliers');
   try {
     const renamed = newName !== (s.name || '').trim();
@@ -3518,7 +3632,6 @@ async function editSupplier(id){
     } else {
       if(renamed){
         const c = countSupplierRefs(s.name);
-        if(c.total && !confirm(`Rename "${s.name}" to "${newName}"?\n\nThis also corrects ${describeSupplierRefs(c)} that use the old name, so the old name disappears from every list.`)) return;
         showSaveStatus('saving', 'Renaming supplier...');
         await renameSupplierEverywhere(s.name, newName);
         addLog('Rename Supplier', `"${s.name}" → "${newName}" (${describeSupplierRefs(c)} updated)`);
@@ -3860,13 +3973,18 @@ async function editTeamUser(username){
   if(!hasPerm('manageUsers')){ showToast('No permission', 'error'); return; }
   const doc = await db.collection('users').doc(username).get(); if(!doc.exists) return;
   const u = doc.data();
-  const newFullName = prompt('Full name:', u.fullName || ''); if(newFullName === null) return;
-  const newRole = prompt('Role (manager / accountant / cashier):', u.role || 'cashier'); if(newRole === null) return;
-  const validRoles = ['manager','accountant','cashier'];
-  if(!validRoles.includes(newRole.toLowerCase())){ showToast('Invalid role', 'error'); return; }
-  const newPassword = prompt('New password (leave blank to keep):', ''); if(newPassword === null) return;
-  const updates = { fullName: newFullName, role: newRole.toLowerCase() };
-  if(newPassword) { if(newPassword.length < 6){ showToast('Password too short', 'error'); return; } updates.password = newPassword; }
+  const uv = await askForm({
+    title: 'Edit team member', icon: 'fa-user-pen', subtitle: '@' + username, submitLabel: 'Save changes',
+    fields: [
+      { name: 'fullName', label: 'Full name', value: u.fullName || '', required: true },
+      { name: 'role', label: 'Role', type: 'select', value: (u.role || 'cashier').toLowerCase(), options: [{ value: 'manager', label: 'Manager' }, { value: 'accountant', label: 'Accountant' }, { value: 'cashier', label: 'Cashier' }], hint: 'What each role can do is set under Custom Permissions on this page.' },
+      { name: 'password', label: 'New password', type: 'password', hint: 'Leave blank to keep the current password. At least 6 characters.' }
+    ],
+    validate: v => (v.password && v.password.length < 6) ? 'Password must be at least 6 characters' : ''
+  });
+  if(!uv) return;
+  const updates = { fullName: uv.fullName.trim(), role: uv.role };
+  if(uv.password) updates.password = uv.password;
   await db.collection('users').doc(username).update(updates);
   addLog('Edit User', `${username} updated by ${currentUser.username}`);
   showToast('User updated', 'success');
@@ -3894,7 +4012,7 @@ function markNavGroups(){
   });
 }
 document.addEventListener('click', e => { if(!e.target.closest('#userTabNav .nav-group')) closeNavGroups(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNavGroups(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeNavGroups(); cancelFormModal(); } });
 function switchTab(tab){
   activeTab = tab;
   document.querySelectorAll('#app .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -4311,15 +4429,23 @@ async function editDailyBalancing(dateStr){
   if(isBalancingMonthClosed(dateStr)){ showToast('Month is closed', 'error'); return; }
   const rec = weeklyClosures.find(w => w.date === dateStr);
   if(!rec){ showToast('Record not found', 'error'); return; }
-  const newStockCost = prompt('Total Stock Cost (UGX):', rec.stockCost ?? rec.stock ?? 0); if(newStockCost === null) return;
-  const newStockPrice = prompt('Total Stock Price (UGX):', rec.stockPrice ?? 0); if(newStockPrice === null) return;
-  const newCredit = prompt('Total Credit (UGX):', rec.credit ?? 0); if(newCredit === null) return;
-  const newCash = prompt('Cash at Hand (UGX):', rec.cash ?? 0); if(newCash === null) return;
-  rec.stockCost = parseFloat(newStockCost) || 0;
-  rec.stockPrice = parseFloat(newStockPrice) || 0;
+  const ledgerNow = Math.round(ledgerTotalOwed(dateStr));
+  const bv = await askForm({
+    title: 'Edit daily balancing', icon: 'fa-scale-balanced', subtitle: new Date(dateStr).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }), submitLabel: 'Save record',
+    fields: [
+      { name: 'stockCost', label: 'Total stock cost (UGX)', type: 'number', value: rec.stockCost ?? rec.stock ?? 0, half: true },
+      { name: 'stockPrice', label: 'Total stock price (UGX)', type: 'number', value: rec.stockPrice ?? 0, half: true },
+      { name: 'credit', label: 'Total credit (UGX)', type: 'number', value: rec.credit ?? 0, half: true, hint: `Suppliers ledger says UGX ${fmt(ledgerNow)} was owed on this date.`, fill: { label: 'Use ledger figure', value: ledgerNow } },
+      { name: 'cash', label: 'Cash at hand (UGX)', type: 'number', value: rec.cash ?? 0, half: true }
+    ]
+  });
+  if(!bv) return;
+  rec.stockCost = parseFloat(bv.stockCost) || 0;
+  rec.stockPrice = parseFloat(bv.stockPrice) || 0;
   rec.stock = rec.stockCost;
-  rec.credit = parseFloat(newCredit) || 0;
-  rec.cash = parseFloat(newCash) || 0;
+  rec.credit = parseFloat(bv.credit) || 0;
+  rec.ledgerCredit = ledgerNow; rec.creditSource = rec.credit === ledgerNow ? 'ledger' : 'manual';
+  rec.cash = parseFloat(bv.cash) || 0;
   rec.editedAt = new Date().toISOString();
   rec.editedBy = currentUser.username;
   try {
