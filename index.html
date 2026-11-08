@@ -438,6 +438,16 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .sf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;}
 .sf-field label{display:block;font-size:0.68rem;font-weight:700;color:#5f7385;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.25rem;}
 .sf-field input,.sf-field select,.sf-field textarea{width:100%;padding:0.55rem 0.6rem;border-radius:8px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.85rem;background:#fff;}
+.link-btn{background:#fff;border:1px solid #d2dfeb;color:#7b8fa0;border-radius:8px;padding:0.35rem 0.45rem;cursor:pointer;font-size:0.8rem;flex:0 0 auto;}
+.link-btn.on{background:#e6f4ec;border-color:#a9d8bb;color:#1d7a4b;}
+.link-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.er-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.8rem;align-items:end;}
+.er-filters label{display:block;font-size:0.68rem;font-weight:700;color:#5f7385;text-transform:uppercase;margin-bottom:0.25rem;}
+.er-filters input,.er-filters select{width:100%;padding:0.55rem;border-radius:8px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.85rem;}
+.er-chips{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;}
+.er-chip{background:#fff;border:1px solid #d2dfeb;border-radius:999px;padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:#0b2b44;}
+.er-chip:hover{background:#eef6ff;}
+.er-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;}
 .sf-locked{opacity:0.55;}
 .sf-locked select,.sf-locked input{background:#e9eef3 !important;color:#6a7f94;cursor:not-allowed;}
 .sf-box{background:#fff;border:1px solid #dfe9f3;border-radius:14px;padding:0.9rem 1rem;margin-top:0.9rem;}
@@ -505,6 +515,27 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .tab-btn.active{background:linear-gradient(135deg,#1d7a4b,#16633c);color:#fff;box-shadow:0 6px 14px rgba(29,122,75,.3);}
 .tab-btn.active i{color:#d5f5e3;}
 .tab-btn:focus-visible{outline:2px solid #1d7a4b;outline-offset:2px;}
+#userTabNav{overflow:visible;flex-wrap:wrap;}
+.nav-group{position:relative;flex:0 0 auto;}
+.nav-group.hidden{display:none !important;}
+.nav-trigger .nav-caret{font-size:.65rem;margin-left:.1rem;transition:transform .18s;}
+.nav-group.open .nav-trigger .nav-caret{transform:rotate(180deg);}
+.nav-trigger .nav-current{font-weight:500;opacity:.85;}
+.nav-trigger .nav-current:empty{display:none;}
+.nav-trigger .nav-current::before{content:'\00b7';margin:0 .35rem 0 .1rem;}
+.nav-menu{display:none;position:absolute;top:calc(100% + 8px);left:0;min-width:270px;max-width:86vw;background:#fff;border:1px solid #e3ebf3;border-radius:16px;box-shadow:0 18px 40px rgba(11,43,68,.18);padding:.4rem;z-index:60;}
+.nav-group.open .nav-menu{display:block;}
+.nav-group.align-right .nav-menu{left:auto;right:0;}
+.nav-menu .tab-btn{display:flex;width:100%;align-items:center;gap:.7rem;text-align:left;white-space:normal;padding:.6rem .7rem;border-radius:12px;}
+.nav-menu .tab-btn.hidden{display:none !important;}
+.nav-menu .tab-btn i{width:1.4em;font-size:1rem;}
+.nav-menu .tab-btn .nav-item-text{display:flex;flex-direction:column;line-height:1.25;}
+.nav-menu .tab-btn .nav-item-text b{font-weight:700;font-size:.85rem;}
+.nav-menu .tab-btn .nav-item-text small{font-weight:500;font-size:.72rem;color:#7b8fa0;}
+.nav-menu .tab-btn.active{background:#e6f4ec;color:#0b5a33;box-shadow:none;}
+.nav-menu .tab-btn.active i{color:#1d7a4b;}
+.nav-menu .tab-btn.active small{color:#4f7d63;}
+@media (max-width:700px){.nav-trigger .nav-current{display:none;}.nav-menu{min-width:250px;}}
 @media (max-width:700px){
   .app-header{padding:1rem;border-radius:18px;}
   .app-header h1{font-size:1.3rem;}
@@ -673,14 +704,30 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 
   <div class="tab-nav" id="userTabNav">
     <button class="tab-btn" data-tab="closure" data-perm="editShifts" onclick="switchTab('closure')"><i class="fas fa-cash-register"></i> Daily Closure</button>
-    <button class="tab-btn" data-tab="purchases" data-perm="viewPurchases" onclick="switchTab('purchases')"><i class="fas fa-truck"></i> Daily Purchases</button>
-    <button class="tab-btn" data-tab="daily" data-perm="viewDaily" onclick="switchTab('daily')"><i class="fas fa-calendar-day"></i> Daily Performance</button>
-    <button class="tab-btn" data-tab="audit" data-perm="viewAudit" onclick="switchTab('audit')"><i class="fas fa-balance-scale"></i> Daily Balancing</button>
-    <button class="tab-btn" data-tab="shifts" data-perm="viewShifts" onclick="switchTab('shifts')"><i class="fas fa-clock"></i> Shifts History</button>
-    <button class="tab-btn" data-tab="history" data-perm="viewHistory" onclick="switchTab('history')"><i class="fas fa-clock-rotate-left"></i> Month History</button>
-    <button class="tab-btn" data-tab="log" data-perm="viewLog" onclick="switchTab('log')"><i class="fas fa-history"></i> Audit Log</button>
-    <button class="tab-btn" data-tab="suppliers" data-perm="viewSuppliers" onclick="switchTab('suppliers')"><i class="fas fa-address-book"></i> Suppliers</button>
-    <button class="tab-btn hidden" data-tab="team" data-perm="manageUsers" id="teamTabBtn" onclick="switchTab('team')"><i class="fas fa-users-gear"></i> Team Management</button>
+    <div class="nav-group" data-group="entries">
+      <button type="button" class="tab-btn nav-trigger" aria-haspopup="true" aria-expanded="false" onclick="toggleNavGroup(this)"><i class="fas fa-pen-to-square"></i> <span class="nav-label">Daily Entries</span><span class="nav-current"></span> <i class="fas fa-chevron-down nav-caret"></i></button>
+      <div class="nav-menu" role="menu">
+        <button class="tab-btn" data-tab="purchases" data-perm="viewPurchases" onclick="switchTab('purchases')" role="menuitem"><i class="fas fa-truck"></i><span class="nav-item-text"><b>Daily Purchases</b><small>What you bought and from whom</small></span></button>
+        <button class="tab-btn" data-tab="daily" data-perm="viewDaily" onclick="switchTab('daily')" role="menuitem"><i class="fas fa-calendar-day"></i><span class="nav-item-text"><b>Daily Performance</b><small>Sales, cost and expenses for each day</small></span></button>
+        <button class="tab-btn" data-tab="audit" data-perm="viewAudit" onclick="switchTab('audit')" role="menuitem"><i class="fas fa-balance-scale"></i><span class="nav-item-text"><b>Daily Balancing</b><small>Stock, credit and cash check</small></span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-group="reports">
+      <button type="button" class="tab-btn nav-trigger" aria-haspopup="true" aria-expanded="false" onclick="toggleNavGroup(this)"><i class="fas fa-chart-column"></i> <span class="nav-label">Reports</span><span class="nav-current"></span> <i class="fas fa-chevron-down nav-caret"></i></button>
+      <div class="nav-menu" role="menu">
+        <button class="tab-btn" data-tab="shifts" data-perm="viewShifts" onclick="switchTab('shifts')" role="menuitem"><i class="fas fa-clock"></i><span class="nav-item-text"><b>Shifts History</b><small>Every cashier shift and its cash count</small></span></button>
+        <button class="tab-btn" data-tab="expenses" data-perm="viewShifts" onclick="switchTab('expenses')" role="menuitem"><i class="fas fa-receipt"></i><span class="nav-item-text"><b>Expenses Report</b><small>What cashiers spent, by date</small></span></button>
+        <button class="tab-btn" data-tab="history" data-perm="viewHistory" onclick="switchTab('history')" role="menuitem"><i class="fas fa-clock-rotate-left"></i><span class="nav-item-text"><b>Month History</b><small>Closed months and past totals</small></span></button>
+        <button class="tab-btn" data-tab="log" data-perm="viewLog" onclick="switchTab('log')" role="menuitem"><i class="fas fa-history"></i><span class="nav-item-text"><b>Audit Log</b><small>Who changed what, and when</small></span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-group="manage">
+      <button type="button" class="tab-btn nav-trigger" aria-haspopup="true" aria-expanded="false" onclick="toggleNavGroup(this)"><i class="fas fa-gear"></i> <span class="nav-label">Manage</span><span class="nav-current"></span> <i class="fas fa-chevron-down nav-caret"></i></button>
+      <div class="nav-menu" role="menu">
+        <button class="tab-btn" data-tab="suppliers" data-perm="viewSuppliers" onclick="switchTab('suppliers')" role="menuitem"><i class="fas fa-address-book"></i><span class="nav-item-text"><b>Suppliers</b><small>Supplier list, ledger and payments</small></span></button>
+        <button class="tab-btn hidden" id="teamTabBtn" data-tab="team" data-perm="manageUsers" onclick="switchTab('team')" role="menuitem"><i class="fas fa-users-gear"></i><span class="nav-item-text"><b>Team Management</b><small>Users and what each role can do</small></span></button>
+      </div>
+    </div>
   </div>
 
   <!-- DAILY CLOSURE -->
@@ -841,10 +888,11 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       <div class="table-scroll"><table id="dailyTable"><thead><tr>
         <th style="width:110px;">Day</th><th style="width:130px;">Date</th>
         <th style="width:100px;">Total Cost</th><th style="width:100px;">Total Sales</th>
-        <th style="width:100px;">Expenses</th><th style="width:110px;">Gross Profit</th><th style="width:60px;"></th>
+        <th style="width:150px;">Expenses <span title="The link icon fills this from the cashier shift expenses for that date" style="color:#7b8fa0;font-weight:400;"><i class="fas fa-circle-info"></i></span></th><th style="width:110px;">Gross Profit</th><th style="width:60px;"></th>
       </tr></thead><tbody id="tableBody"></tbody></table></div>
       <div style="padding:0.8rem 1.2rem;border-top:1px solid #eef3f8;display:flex;justify-content:space-between;align-items:center;">
         <button class="add-row-btn editor-only" onclick="addRow()"><i class="fas fa-plus-circle"></i> Add row</button>
+        <button class="add-row-btn editor-only" onclick="linkAllDailyExpenses()" title="Fill every day's Expenses from the cashier shift expenses"><i class="fas fa-link"></i> Link expenses to cashier shifts</button>
       </div>
     </div>
     <div class="section-title"><i class="fas fa-chart-bar"></i> Computed totals</div>
@@ -911,10 +959,10 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
     <div class="section-title editor-only" id="auditAddTitle"><i class="fas fa-plus-circle"></i> Add daily balancing entry</div>
     <div class="table-card editor-only" id="auditAddCard" style="padding:1.2rem;">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
-        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Date</label><input type="date" id="newClosureDate" style="margin-top:0.3rem;"></div>
+        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Date</label><input type="date" id="newClosureDate" style="margin-top:0.3rem;" onchange="refreshBalancingCredit()"></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Stock Cost (UGX)</label><input type="number" id="newClosureStock" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Cost value of stock on hand</div></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Stock Price (UGX)</label><input type="number" id="newClosureStockPrice" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Retail value of stock on hand</div></div>
-        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Credit (UGX)</label><input type="number" id="newClosureCredit" placeholder="0" style="margin-top:0.3rem;"></div>
+        <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Total Credit (UGX)</label><input type="number" id="newClosureCredit" placeholder="0" style="margin-top:0.3rem;" oninput="onBalancingCreditInput()"><div id="newClosureCreditHint" style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;"></div></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Cash at Hand (UGX)</label><input type="number" id="newClosureCash" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Count it yourself (required)</div></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Cash banked / taken out (UGX)</label><input type="number" id="newClosureOut" placeholder="0" style="margin-top:0.3rem;"><div style="font-size:0.68rem;color:#7b8fa0;margin-top:0.25rem;">Since last record: deposits, drawings, cash-paid salaries/rent</div></div>
         <div><label style="font-size:0.75rem;font-weight:600;color:#5f7385;text-transform:uppercase;">Stock figure source</label><select id="newClosureSrc" style="margin-top:0.3rem;"><option value="physical">Physical count</option><option value="system">System / book figure</option></select></div>
@@ -972,6 +1020,41 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   </div>
 
   <!-- MONTH HISTORY -->
+  <!-- EXPENSES REPORT -->
+  <div class="tab-panel" id="tab-expenses">
+    <div class="table-card" style="padding:1.1rem 1.2rem;">
+      <div class="er-filters">
+        <div><label>From</label><input type="date" id="erFrom" onchange="renderExpensesReport()"></div>
+        <div><label>To</label><input type="date" id="erTo" onchange="renderExpensesReport()"></div>
+        <div><label>Cashier</label><select id="erCashier" onchange="renderExpensesReport()"></select></div>
+        <div><label>Expense type</label><select id="erType" onchange="renderExpensesReport()"></select></div>
+        <div><label>Search description</label><input type="text" id="erQ" placeholder="e.g. transport" oninput="renderExpensesReport()"></div>
+      </div>
+      <div class="er-chips">
+        <span class="er-chip" onclick="erRange('today')">Today</span><span class="er-chip" onclick="erRange('yesterday')">Yesterday</span>
+        <span class="er-chip" onclick="erRange('week')">Last 7 days</span><span class="er-chip" onclick="erRange('month')">This month</span>
+        <span class="er-chip" onclick="erRange('lastmonth')">Last month</span>
+        <span style="flex:1"></span>
+        <button class="btn" onclick="erDownload()"><i class="fas fa-file-excel"></i> Download Excel</button>
+      </div>
+    </div>
+    <div class="summary-grid" id="erSummary" style="margin-top:1rem;"></div>
+    <div id="erNote"></div>
+    <div class="er-two">
+      <div><div class="section-title"><i class="fas fa-user"></i> By cashier</div><div class="table-card"><div class="table-scroll"><table><thead><tr><th>Cashier</th><th>Items</th><th>Total (UGX)</th><th>Share</th></tr></thead><tbody id="erByCashier"></tbody></table></div></div></div>
+      <div><div class="section-title"><i class="fas fa-tags"></i> By expense type</div><div class="table-card"><div class="table-scroll"><table><thead><tr><th>Type</th><th>Items</th><th>Total (UGX)</th><th>Share</th></tr></thead><tbody id="erByType"></tbody></table></div></div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:1.4rem 0 0.8rem;flex-wrap:wrap;gap:0.6rem;">
+      <div class="section-title" style="margin:0;"><i class="fas fa-link"></i> Day by day: cashier expenses vs Daily Performance</div>
+      <button class="btn editor-only" onclick="erApplyToDaily()"><i class="fas fa-link"></i> Link these days in Daily Performance</button>
+    </div>
+    <div class="table-card"><div class="table-scroll"><table><thead><tr><th>Date</th><th>Cashier expenses</th><th>Daily Performance</th><th>Difference</th><th>Daily Performance row</th></tr></thead><tbody id="erByDay"></tbody></table></div></div>
+    <div class="section-title" style="margin-top:1.4rem;"><i class="fas fa-list"></i> All itemised expenses</div>
+    <div class="table-card"><div class="table-scroll"><table><thead><tr><th>Date</th><th>Period</th><th>Cashier</th><th>Type</th><th>Description</th><th style="text-align:right;">Amount (UGX)</th><th>Shift</th></tr></thead><tbody id="erItems"></tbody></table></div>
+      <div style="padding:0.8rem 1.2rem;border-top:1px solid #eef3f8;text-align:right;font-size:0.9rem;"><strong>Total:</strong> <span id="erTotalFoot" style="font-weight:700;color:#b33a3a;">UGX 0</span></div>
+    </div>
+  </div>
+
   <div class="tab-panel" id="tab-history">
     <div style="background:white;padding:1.2rem 1.5rem;border-radius:16px;border:1px solid #e3ebf3;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <i class="fas fa-clock-rotate-left" style="font-size:1.8rem;color:#1d7a4b;"></i>
@@ -1450,7 +1533,7 @@ function hasPerm(perm){
   return !!merged[perm];
 }
 function applyTabPermissions(){
-  const permMap = { closure: 'editShifts', purchases: 'viewPurchases', daily: 'viewDaily', audit: 'viewAudit', shifts: 'viewShifts', history: 'viewHistory', log: 'viewLog', suppliers: 'viewSuppliers', team: 'manageUsers' };
+  const permMap = { closure: 'editShifts', purchases: 'viewPurchases', daily: 'viewDaily', audit: 'viewAudit', shifts: 'viewShifts', expenses: 'viewShifts', history: 'viewHistory', log: 'viewLog', suppliers: 'viewSuppliers', team: 'manageUsers' };
   document.querySelectorAll('#userTabNav .tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     const perm = permMap[tab];
@@ -1458,9 +1541,13 @@ function applyTabPermissions(){
     if(hasPerm(perm)) btn.classList.remove('hidden');
     else btn.classList.add('hidden');
   });
-  const activeBtn = document.querySelector('#userTabNav .tab-btn.active');
+  document.querySelectorAll('#userTabNav .nav-group').forEach(g => {
+    const any = [...g.querySelectorAll('.tab-btn[data-tab]')].some(b => !b.classList.contains('hidden'));
+    g.classList.toggle('hidden', !any);
+  });
+  const activeBtn = document.querySelector('#userTabNav .tab-btn[data-tab].active');
   if(!activeBtn || activeBtn.classList.contains('hidden')){
-    const firstVisible = document.querySelector('#userTabNav .tab-btn:not(.hidden)');
+    const firstVisible = document.querySelector('#userTabNav .tab-btn[data-tab]:not(.hidden)');
     if(firstVisible) switchTab(firstVisible.dataset.tab);
   }
 }
@@ -1819,6 +1906,7 @@ async function loadLocationData(locationId) {
     supplierPayments = []; spSnap.forEach(doc => supplierPayments.push({ id: doc.id, ...doc.data() }));
     const shSnap = await db.collection('locations').doc(locationId).collection('shifts').orderBy('date','desc').limit(500).get();
     allShifts = []; shSnap.forEach(doc => allShifts.push({ id: doc.id, ...doc.data() }));
+    try { syncLinkedExpenses(); } catch(e) { console.warn(e); }
     sortAllShifts();
     await backfillShiftPeriods();
     const curKey = currentCalendarMonthKey();
@@ -2533,6 +2621,7 @@ async function syncCashToClosureAudit(){ return;
 
 /* SHIFTS HISTORY */
 function renderShifts(){
+  try { syncLinkedExpenses(); } catch(e) { console.warn(e); }
   const sel = document.getElementById('shiftMonthFilter');
   if(sel && sel.options.length <= 1){
     const months = new Set(allShifts.map(s => s.date ? s.date.slice(0,7) : '').filter(Boolean));
@@ -3458,6 +3547,188 @@ async function deleteSupplier(id){
   } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
 
+/* ===== CASHIER EXPENSES: report, Daily Performance link, balancing credit link ===== */
+const ER_PERIOD_RANK = { evening: 2, afternoon: 1, morning: 0 };
+function shiftsCoverageStart(){   // shifts are loaded newest-first up to a limit; dates older than the oldest loaded shift are not covered
+  if(allShifts.length < 500) return '';
+  return allShifts.reduce((m, sh) => (!m || (sh.date && sh.date < m)) ? sh.date : m, '');
+}
+/* Itemised expense lines of every shift in a date range (unitemised totals are kept as one line so nothing is lost). */
+function cashierExpenseItems(from, to){
+  const items = [];
+  allShifts.forEach(sh => {
+    if(!sh.date || sh.date < from || sh.date > to) return;
+    const lines = Array.isArray(sh.expenseItems) ? sh.expenseItems : [];
+    let itemised = 0;
+    const base = { date: sh.date, period: sh.period, cashier: sh.cashier || '', cashierName: sh.cashierName || sh.cashier || '—', status: sh.status, shiftId: sh.id };
+    lines.forEach(e => { const amt = parseFloat(e.amount) || 0; if(!amt && !e.description) return; items.push({ ...base, type: e.type || 'Other', description: e.description || '', amount: amt }); itemised += amt; });
+    const total = parseFloat(sh.expenses) || 0;
+    if(total - itemised > 0.5) items.push({ ...base, type: 'Not itemised', description: 'Total entered without a breakdown', amount: total - itemised });
+  });
+  items.sort((a, b) => b.date.localeCompare(a.date) || (ER_PERIOD_RANK[b.period] ?? 0) - (ER_PERIOD_RANK[a.period] ?? 0) || a.cashierName.localeCompare(b.cashierName));
+  return items;
+}
+function shiftExpensesByDate(){
+  const map = {};
+  allShifts.forEach(sh => { if(!sh.date) return; const t = parseFloat(sh.expenses) || 0; const m = (map[sh.date] = map[sh.date] || { total: 0, shifts: 0 }); m.total += t; m.shifts++; });
+  return map;
+}
+/* Daily Performance rows marked as linked take their Expenses from the cashier shifts of that date. */
+function syncLinkedExpenses(){
+  const map = shiftExpensesByDate(), cov = shiftsCoverageStart();
+  let changed = false;
+  Object.keys(allMonthsData).forEach(mk => {
+    const m = allMonthsData[mk]; if(!m || m.closed) return;
+    (m.entries || []).forEach(r => {
+      if(!r.expLink || !r.date) return;
+      if(cov && r.date < cov) return;
+      const v = (map[r.date] && map[r.date].total) || 0;
+      if((parseFloat(r.expenses) || 0) !== v){ r.expenses = v; changed = true; }
+    });
+  });
+  if(changed) scheduleSave();
+  return changed;
+}
+function toggleExpLink(idx){
+  if(!hasPerm('editDaily')){ showToast('No permission', 'error'); return; }
+  if(allMonthsData[currentMonthKey]?.closed){ showToast('Month is closed'); return; }
+  const r = currentEntries()[idx]; if(!r) return;
+  r.expLink = !r.expLink;
+  if(r.expLink) syncLinkedExpenses(); else scheduleSave();
+  renderTable(); renderSummary(); renderTotals();
+}
+function linkAllDailyExpenses(){
+  if(!hasPerm('editDaily')){ showToast('No permission', 'error'); return; }
+  if(allMonthsData[currentMonthKey]?.closed){ showToast('Month is closed'); return; }
+  const rows = currentEntries().filter(r => r.date); if(!rows.length){ showToast('No daily rows to link'); return; }
+  const map = shiftExpensesByDate(), cov = shiftsCoverageStart();
+  const todo = rows.filter(r => !(cov && r.date < cov));
+  const oldTotal = todo.reduce((a, r) => a + (parseFloat(r.expenses) || 0), 0);
+  const newTotal = todo.reduce((a, r) => a + ((map[r.date] && map[r.date].total) || 0), 0);
+  const changing = todo.filter(r => (parseFloat(r.expenses) || 0) !== ((map[r.date] && map[r.date].total) || 0)).length;
+  if(!confirm(`Link ${todo.length} day(s) in ${monthLabel(currentMonthKey)} to the expenses cashiers recorded in their shifts?\\n\\n${changing} day(s) will change. Total expenses go from UGX ${fmt(oldTotal)} to UGX ${fmt(newTotal)}.\\n\\nYou can unlink any day with its link button to type it yourself.`)) return;
+  todo.forEach(r => { r.expLink = true; });
+  addLog('Link Daily Expenses', `${monthLabel(currentMonthKey)}: ${todo.length} day(s) linked to cashier expenses (UGX ${fmt(oldTotal)} → ${fmt(newTotal)})`);
+  syncLinkedExpenses(); scheduleSave();
+  renderTable(); renderSummary(); renderTotals(); showToast('Expenses linked to cashier shifts', 'success');
+}
+
+/* --- Expenses Report tab --- */
+function erGet(){
+  const g = id => (document.getElementById(id) || {}).value || '';
+  let from = g('erFrom'), to = g('erTo');
+  if(from && to && from > to){ const t = from; from = to; to = t; }
+  return { from, to, cashier: g('erCashier'), type: g('erType'), q: g('erQ').trim().toLowerCase() };
+}
+function erRange(kind){
+  const t = new Date(), ymd = _ymd, f = document.getElementById('erFrom'), e = document.getElementById('erTo');
+  if(kind === 'today'){ f.value = e.value = ymd(t); }
+  else if(kind === 'yesterday'){ const d = new Date(t); d.setDate(d.getDate() - 1); f.value = e.value = ymd(d); }
+  else if(kind === 'week'){ const d = new Date(t); d.setDate(d.getDate() - 6); f.value = ymd(d); e.value = ymd(t); }
+  else if(kind === 'month'){ f.value = ymd(new Date(t.getFullYear(), t.getMonth(), 1)); e.value = ymd(t); }
+  else if(kind === 'lastmonth'){ f.value = ymd(new Date(t.getFullYear(), t.getMonth() - 1, 1)); e.value = ymd(new Date(t.getFullYear(), t.getMonth(), 0)); }
+  renderExpensesReport();
+}
+function erGroup(items, keyFn){
+  const m = {}; items.forEach(i => { const k = keyFn(i); (m[k] = m[k] || { key: k, count: 0, total: 0 }); m[k].count++; m[k].total += i.amount; });
+  return Object.values(m).sort((a, b) => b.total - a.total);
+}
+function erCompute(){
+  const f = erGet(); if(!f.from || !f.to) return null;
+  const all = cashierExpenseItems(f.from, f.to);
+  const items = all.filter(i => (!f.cashier || i.cashier === f.cashier) && (!f.type || i.type === f.type) && (!f.q || (i.description + ' ' + i.type).toLowerCase().includes(f.q)));
+  const total = items.reduce((a, i) => a + i.amount, 0);
+  const byCashier = erGroup(items, i => i.cashierName), byType = erGroup(items, i => i.type);
+  const comparable = !f.cashier && !f.type && !f.q;
+  const dp = {}; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].entries || []).forEach(r => { if(r.date >= f.from && r.date <= f.to) dp[r.date] = { row: r, closed: !!allMonthsData[mk].closed, mk }; }));
+  const byDate = {}; items.forEach(i => { byDate[i.date] = (byDate[i.date] || 0) + i.amount; });
+  const dates = [...new Set([...Object.keys(byDate), ...(comparable ? Object.keys(dp).filter(d => (parseFloat(dp[d].row.expenses) || 0) > 0) : [])])].sort().reverse();
+  const days = dates.map(d => ({ date: d, shifts: byDate[d] || 0, dp: dp[d] || null }));
+  const dayCount = Math.max(1, Math.round((new Date(f.to) - new Date(f.from)) / 86400000) + 1);
+  let purchases = 0; allShifts.forEach(sh => { if(sh.date >= f.from && sh.date <= f.to && (!f.cashier || sh.cashier === f.cashier)) purchases += parseFloat(sh.purchasesPaid) || 0; });
+  return { f, items, total, byCashier, byType, days, comparable, dayCount, purchases, shiftCount: new Set(items.map(i => i.shiftId)).size, dp };
+}
+function renderExpensesReport(){
+  const fEl = document.getElementById('erFrom'); if(!fEl) return;
+  if(!fEl.value){ const t = new Date(); fEl.value = _ymd(new Date(t.getFullYear(), t.getMonth(), 1)); document.getElementById('erTo').value = _ymd(t); }
+  const cashSel = document.getElementById('erCashier'), typeSel = document.getElementById('erType');
+  const people = {}; allShifts.forEach(sh => { if(sh.cashier) people[sh.cashier] = sh.cashierName || sh.cashier; });
+  const peopleKey = Object.keys(people).sort().join('|');
+  if(!cashSel.options.length || cashSel.dataset.people !== peopleKey){
+    const keep = cashSel.value; cashSel.dataset.people = peopleKey;
+    cashSel.innerHTML = '<option value="">All cashiers</option>' + Object.entries(people).sort((a, b) => a[1].localeCompare(b[1])).map(([u, n]) => `<option value="${esc(u)}">${esc(n)}</option>`).join('');
+    typeSel.innerHTML = '<option value="">All types</option>' + [...CLOSURE_EXPENSE_TYPES, 'Not itemised'].map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    cashSel.value = keep;
+  }
+  const r = erCompute(); if(!r) return;
+  const sum = document.getElementById('erSummary');
+  const top = r.byType[0], topC = r.byCashier[0];
+  sum.innerHTML = `
+    <div class="sum-card flag-amber"><div class="sum-label"><i class="fas fa-receipt"></i> Total expenses</div><div class="sum-value">${fmt(r.total)}</div><div class="sum-sub">${r.items.length} item(s) in ${r.shiftCount} shift(s)</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-calendar-day"></i> Average per day</div><div class="sum-value">${fmt(r.total / r.dayCount)}</div><div class="sum-sub">${r.dayCount} day(s) selected</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-tags"></i> Biggest type</div><div class="sum-value" style="font-size:1.1rem;">${top ? esc(top.key) : '—'}</div><div class="sum-sub">${top ? 'UGX ' + fmt(top.total) : ''}</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-user"></i> Biggest spender</div><div class="sum-value" style="font-size:1.1rem;">${topC ? esc(topC.key) : '—'}</div><div class="sum-sub">${topC ? 'UGX ' + fmt(topC.total) : ''}</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-truck-ramp-box"></i> Purchases paid from till</div><div class="sum-value" style="font-size:1.1rem;">${fmt(r.purchases)}</div><div class="sum-sub">Not counted as expenses</div></div>`;
+  const cov = shiftsCoverageStart();
+  document.getElementById('erNote').innerHTML = (cov && r.f.from < cov) ? `<div style="margin:0.8rem 0;padding:0.6rem 1rem;background:#fff6e0;border:1px solid #f0d58a;border-radius:10px;font-size:0.8rem;color:#7a5200;"><i class="fas fa-triangle-exclamation"></i> Only shifts from ${cov} onward are loaded, so earlier dates in this range may be incomplete.</div>` : '';
+  const pct = v => r.total ? Math.round(v / r.total * 100) + '%' : '—';
+  const grp = list => list.length ? list.map(g => `<tr><td>${esc(g.key)}</td><td>${g.count}</td><td style="font-weight:600;">${fmt(g.total)}</td><td>${pct(g.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:1.2rem;color:#7b8fa0;">No expenses in this range.</td></tr>';
+  document.getElementById('erByCashier').innerHTML = grp(r.byCashier);
+  document.getElementById('erByType').innerHTML = grp(r.byType);
+  document.getElementById('erByDay').innerHTML = r.days.length ? r.days.map(d => {
+    const dpv = d.dp ? (parseFloat(d.dp.row.expenses) || 0) : null, diff = (r.comparable && dpv !== null) ? dpv - d.shifts : null;
+    let status = '—';
+    if(r.comparable){ status = !d.dp ? '<span class="badge-pill amber">No daily row</span>' : d.dp.closed ? '<span class="badge-pill">Month closed</span>' : d.dp.row.expLink ? '<span class="badge-pill green">Linked</span>' : '<span class="badge-pill blue">Typed manually</span>'; }
+    return `<tr><td>${new Date(d.date).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'})}</td><td>${fmt(d.shifts)}</td><td>${r.comparable && dpv !== null ? fmt(dpv) : '—'}</td><td style="font-weight:600;color:${diff ? '#b33a3a' : '#1d7a4b'};">${diff === null ? '—' : (diff === 0 ? 'Matches' : fmtSigned(diff))}</td><td>${status}</td></tr>`;
+  }).join('') : '<tr><td colspan="5" style="text-align:center;padding:1.2rem;color:#7b8fa0;">Nothing in this range.</td></tr>';
+  document.getElementById('erItems').innerHTML = r.items.length ? r.items.map(i => `<tr><td>${new Date(i.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</td><td>${esc(periodLabel(i.period))}</td><td>${esc(i.cashierName)}</td><td>${esc(i.type)}</td><td>${esc(i.description) || '<span style="color:#7b8fa0;">—</span>'}</td><td style="text-align:right;font-weight:600;color:#b33a3a;">${fmt(i.amount)}</td><td><button class="btn" style="padding:0.25rem 0.5rem;font-size:0.7rem;" onclick="viewShift('${i.shiftId}')"><i class="fas fa-eye"></i>${i.status === 'open' ? ' open' : ''}</button></td></tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:#7b8fa0;">No expenses were registered by cashiers in this range.</td></tr>';
+  document.getElementById('erTotalFoot').textContent = 'UGX ' + fmt(r.total);
+}
+async function erApplyToDaily(){
+  if(!hasPerm('editDaily')){ showToast('No permission', 'error'); return; }
+  const r = erCompute(); if(!r) return;
+  if(!r.comparable){ showToast('Clear the cashier, type and search filters first so whole days are compared', 'error'); return; }
+  const map = shiftExpensesByDate(), cov = shiftsCoverageStart();
+  const targets = Object.values(r.dp).filter(x => !x.closed && !(cov && x.row.date < cov));
+  if(!targets.length){ showToast('No open Daily Performance rows in this range'); return; }
+  const oldT = targets.reduce((a, x) => a + (parseFloat(x.row.expenses) || 0), 0), newT = targets.reduce((a, x) => a + ((map[x.row.date] && map[x.row.date].total) || 0), 0);
+  if(!confirm(`Link ${targets.length} Daily Performance day(s) from ${r.f.from} to ${r.f.to} to cashier expenses?\\n\\nTotal expenses there go from UGX ${fmt(oldT)} to UGX ${fmt(newT)}. Rows in closed months are left alone.`)) return;
+  targets.forEach(x => { x.row.expLink = true; });
+  addLog('Link Daily Expenses', `${r.f.from} to ${r.f.to}: ${targets.length} day(s) linked to cashier expenses (UGX ${fmt(oldT)} → ${fmt(newT)})`);
+  syncLinkedExpenses(); scheduleSave(); renderExpensesReport(); renderTable(); renderSummary(); renderTotals();
+  showToast('Daily Performance linked', 'success');
+}
+function erDownload(){
+  const r = erCompute(); if(!r || typeof XLSX === 'undefined'){ showToast('Nothing to export', 'error'); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.items.map(i => ({ Date: i.date, Period: periodLabel(i.period), Cashier: i.cashierName, Type: i.type, Description: i.description, 'Amount (UGX)': i.amount, 'Shift status': i.status }))), 'Itemised expenses');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.byCashier.map(g => ({ Cashier: g.key, Items: g.count, 'Total (UGX)': g.total }))), 'By cashier');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.byType.map(g => ({ Type: g.key, Items: g.count, 'Total (UGX)': g.total }))), 'By type');
+  XLSX.writeFile(wb, `Cashier_Expenses_${r.f.from}_to_${r.f.to}.xlsx`);
+}
+
+/* --- Balancing "Total Credit" is linked to what the supplier ledger says is owed --- */
+function ledgerTotalOwed(upTo){
+  return Object.values(buildLedger(upTo)).reduce((a, r) => a + Math.max(0, r.balance), 0);
+}
+function refreshBalancingCredit(force){
+  const el = document.getElementById('newClosureCredit'); if(!el) return;
+  const date = (document.getElementById('newClosureDate') || {}).value || todayStr();
+  const v = Math.round(ledgerTotalOwed(date));
+  if(force || el.dataset.manual !== '1'){ el.value = v; el.dataset.manual = ''; }
+  const manual = el.dataset.manual === '1';
+  const hint = document.getElementById('newClosureCreditHint');
+  if(hint) hint.innerHTML = manual
+    ? `You changed it. Supplier ledger says UGX ${fmt(v)} on ${date}. <a style="color:#0b5a8a;font-weight:700;cursor:pointer;text-decoration:underline;" onclick="refreshBalancingCredit(true)">Use ledger figure</a>`
+    : `<i class="fas fa-link"></i> From Suppliers ledger: UGX ${fmt(v)} owed as of ${date}. You can edit it.`;
+}
+function onBalancingCreditInput(){
+  const el = document.getElementById('newClosureCredit'); if(!el) return;
+  const date = (document.getElementById('newClosureDate') || {}).value || todayStr();
+  el.dataset.manual = (parseFloat(el.value) || 0) !== Math.round(ledgerTotalOwed(date)) ? '1' : '';
+  refreshBalancingCredit();
+}
+
 /* TEAM */
 function renderTeam(){
   const role = document.getElementById('teamUserRole')?.value || 'manager';
@@ -3603,9 +3874,31 @@ async function editTeamUser(username){
 }
 
 /* TABS */
+function closeNavGroups(){
+  document.querySelectorAll('#userTabNav .nav-group.open').forEach(g => { g.classList.remove('open'); const t = g.querySelector('.nav-trigger'); if(t) t.setAttribute('aria-expanded', 'false'); });
+}
+function toggleNavGroup(trigger){
+  const g = trigger.closest('.nav-group'); const wasOpen = g.classList.contains('open');
+  closeNavGroups();
+  if(wasOpen) return;
+  g.classList.remove('align-right'); g.classList.add('open'); trigger.setAttribute('aria-expanded', 'true');
+  const m = g.querySelector('.nav-menu').getBoundingClientRect();
+  if(m.right > window.innerWidth - 8) g.classList.add('align-right');
+}
+function markNavGroups(){
+  document.querySelectorAll('#userTabNav .nav-group').forEach(g => {
+    const act = g.querySelector('.tab-btn[data-tab].active');
+    const t = g.querySelector('.nav-trigger'); if(!t) return;
+    t.classList.toggle('active', !!act);
+    const cur = t.querySelector('.nav-current'); if(cur) cur.textContent = act ? (act.querySelector('b') ? act.querySelector('b').textContent : '') : '';
+  });
+}
+document.addEventListener('click', e => { if(!e.target.closest('#userTabNav .nav-group')) closeNavGroups(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNavGroups(); });
 function switchTab(tab){
   activeTab = tab;
   document.querySelectorAll('#app .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  markNavGroups(); closeNavGroups();
   document.querySelectorAll('#app .tab-panel').forEach(p => p.classList.remove('active'));
   const panel = document.getElementById('tab-' + tab);
   if(panel) panel.classList.add('active');
@@ -3616,6 +3909,8 @@ function switchTab(tab){
   if(tab === 'suppliers') renderSuppliersList();
   if(tab === 'history') renderHistory();
   if(tab === 'shifts') renderShifts();
+  if(tab === 'expenses') renderExpensesReport();
+  if(tab === 'daily'){ renderTable(); renderSummary(); renderTotals(); }
   if(tab === 'team') renderTeam();
 }
 
@@ -3662,6 +3957,7 @@ function dayName(dateStr){
 }
 function renderTable(){
   const tbody = document.getElementById('tableBody'); if(!tbody) return;
+  try { syncLinkedExpenses(); } catch(e) { console.warn(e); }
   const entries = currentEntries();
   const isClosed = allMonthsData[currentMonthKey]?.closed;
   const canEdit = hasPerm('editDaily') && !isClosed;
@@ -3674,7 +3970,7 @@ function renderTable(){
       <td><input type="date" value="${row.date||''}" ${ro} onchange="updateField(${idx},'date',this.value)" style="${bg}"></td>
       <td><input type="number" step="0.01" value="${row.cost??''}" ${ro} onchange="updateField(${idx},'cost',this.value)" style="color:#b33a3a;${bg}"></td>
       <td><input type="number" step="0.01" value="${row.sales??''}" ${ro} onchange="updateField(${idx},'sales',this.value)" style="color:#1d7a4b;${bg}"></td>
-      <td><input type="number" step="0.01" value="${row.expenses??''}" ${ro} onchange="updateField(${idx},'expenses',this.value)" style="color:#b33a3a;${bg}"></td>
+      <td><div style="display:flex;align-items:center;gap:4px;"><input type="number" step="0.01" value="${row.expenses??''}" ${(ro || row.expLink) ? 'readonly' : ''} onchange="updateField(${idx},'expenses',this.value)" title="${row.expLink ? 'Filled from cashier shift expenses for this date' : ''}" style="color:#b33a3a;${(!canEdit || row.expLink) ? 'background:#f2f6fa;' : ''}"><button type="button" class="link-btn ${row.expLink ? 'on' : ''}" ${canEdit ? '' : 'disabled'} title="${row.expLink ? 'Linked to cashier expenses. Click to type it yourself' : 'Typed manually. Click to link to cashier expenses'}" onclick="toggleExpLink(${idx})"><i class="fas ${row.expLink ? 'fa-link' : 'fa-link-slash'}"></i></button></div></td>
       <td><input type="text" readonly value="${fmt(gp)}" class="profit-input" style="${bg}"></td>
       <td>${canEdit?`<button class="remove-btn" onclick="removeRow(${idx})"><i class="fas fa-trash-alt"></i></button>`:''}</td>
     </tr>`;
@@ -3731,6 +4027,7 @@ function updateField(idx,field,value){
   if(!hasPerm('editDaily')) { showToast('No permission', 'error'); return; }
   if(allMonthsData[currentMonthKey]?.closed) return;
   const entries = currentEntries();
+  if(field === 'expenses' && entries[idx] && entries[idx].expLink) return;   // filled from cashier shifts
   const movedRow = entries[idx];
   if(field==='cost'||field==='sales'||field==='expenses') entries[idx][field] = value===''?0:parseFloat(value); else entries[idx][field] = value;
   if(field === 'date'){ entries[idx].day = dayName(value); sortRowsByDate(entries); }
@@ -3742,7 +4039,7 @@ function addRow(){
   if(allMonthsData[currentMonthKey]?.closed){ showToast('Month is closed'); return; }
   const entries = currentEntries(); const last = entries[entries.length-1];
   let newDate = ''; if(last && last.date){ const d = new Date(last.date); d.setDate(d.getDate()+1); newDate = d.toISOString().split('T')[0]; } else newDate = currentMonthKey + '-01';
-  entries.push({day:dayName(newDate),date:newDate,cost:0,sales:0,expenses:0});
+  entries.push({day:dayName(newDate),date:newDate,cost:0,sales:0,expenses:0,expLink:true});
   sortRowsByDate(entries);
   renderTable(); renderSummary(); renderTotals(); scheduleSave();
 }
@@ -3978,6 +4275,7 @@ function renderAudit(){
   const addTitle = document.getElementById('auditAddTitle'), addCard = document.getElementById('auditAddCard');
   if(addTitle) addTitle.style.display = monthIsClosed ? 'none' : '';
   if(addCard) addCard.style.display = monthIsClosed ? 'none' : '';
+  try { refreshBalancingCredit(); } catch(e) { console.warn(e); }
   const dIn = document.getElementById('newClosureDate');
   if(dIn && currentMonthKey){ const [yy,mm] = currentMonthKey.split('-').map(Number); const last = new Date(yy, mm, 0).getDate(); dIn.min = currentMonthKey + '-01'; dIn.max = currentMonthKey + '-' + String(last).padStart(2,'0'); }
   const redCount = audit.filter(a=>a.flag==='red').length, amberCount = audit.filter(a=>a.flag==='amber').length, greenCount = audit.filter(a=>a.flag==='green').length;
@@ -4055,7 +4353,8 @@ async function addClosureEntry(){
   if(isNaN(cash)){ showToast('Enter the cash you counted at hand. It is no longer auto-filled, so the audit can compare it with the shift counts.', 'error'); return; }
   if(!date){ showToast('Please enter a date', 'error'); return; }
   if(isBalancingMonthClosed(date)){ showToast('Month is closed — balancing records for ' + monthLabel(date.slice(0,7)) + ' are locked', 'error'); return; }
-  const closure = {date, stockCost, stockPrice, stock: stockCost, credit, cash, out: parseFloat(document.getElementById('newClosureOut').value)||0, src: document.getElementById('newClosureSrc').value};
+  const ledgerCredit = Math.round(ledgerTotalOwed(date));
+  const closure = {date, stockCost, stockPrice, stock: stockCost, credit, ledgerCredit, creditSource: credit === ledgerCredit ? 'ledger' : 'manual', cash, out: parseFloat(document.getElementById('newClosureOut').value)||0, src: document.getElementById('newClosureSrc').value};
   const existing = weeklyClosures.find(w => w.date === date);
   if(existing) Object.assign(existing, closure); else weeklyClosures.push(closure);
   weeklyClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -4064,8 +4363,8 @@ async function addClosureEntry(){
   document.getElementById('newClosureDate').value='';
   document.getElementById('newClosureStock').value='';
   document.getElementById('newClosureStockPrice').value='';
-  document.getElementById('newClosureCredit').value='';
   document.getElementById('newClosureCash').value='';
+  refreshBalancingCredit(true);
   renderAudit(); showToast('Daily balancing entry saved', 'success');
 }
 function renderLog(){
@@ -4719,6 +5018,8 @@ function runAuditWithRange(){
   }
   const autoShifts = shiftsInRange.filter(x => x.closedBy === 'auto');
   if(autoShifts.length) issues.amber.push({title:'Shifts closed automatically', desc:`<strong>${autoShifts.length}</strong> shift(s) were never ended by the cashier, so their figures are whatever was last saved as a draft (${autoShifts.slice(0,4).map(x => `${x.date} ${esc(x.cashierName || x.cashier || '?')}`).join('; ')}). Ask the cashier to re-open (if recent) or correct them from Shifts History.`});
+  const credGap = allClosures.map(c => ({ date: c.date, bal: parseFloat(c.credit) || 0, led: Math.round(ledgerTotalOwed(c.date)) })).filter(x => Math.abs(x.bal - x.led) > Math.max(5000, x.led * 0.02));
+  if(credGap.length) issues.amber.push({title:'Balancing credit differs from the supplier ledger', desc:`${credGap.length} balancing record(s) show a Total Credit that is not what the Suppliers ledger says was owed that day (${credGap.slice(0,4).map(x => `${x.date}: sheet ${fmt(x.bal)} vs ledger ${fmt(x.led)}`).join('; ')}). Either the entry was overridden or purchases/payments are missing in the ledger.`});
   const reopenBy = {}; shiftsInRange.filter(x => x.reopenedByCashier).forEach(x => { const k = x.cashierName || x.cashier || '?'; reopenBy[k] = (reopenBy[k] || 0) + 1; });
   const frequent = Object.entries(reopenBy).filter(([k,c]) => c >= 3);
   if(frequent.length) issues.amber.push({title:'Frequent shift re-opens', desc:frequent.map(([k,c]) => `${esc(k)} re-opened ${c} auto-closed shifts`).join('; ') + '. Check that late finishes are genuine.'});
