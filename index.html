@@ -438,6 +438,15 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .sf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;}
 .sf-field label{display:block;font-size:0.68rem;font-weight:700;color:#5f7385;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.25rem;}
 .sf-field input,.sf-field select,.sf-field textarea{width:100%;padding:0.55rem 0.6rem;border-radius:8px;border:1px solid #d2dfeb;font-family:inherit;font-size:0.85rem;background:#fff;}
+.tc-val{font-weight:600;}
+.tc-chg{display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.2rem;padding:0.1rem 0.5rem;border-radius:999px;font-size:0.7rem;font-weight:700;}
+.tc-chg small{font-weight:500;opacity:0.75;margin-left:0.25rem;}
+.tc-arrow{font-size:0.62rem;}
+.tc-chg.good{color:#1d7a4b;background:#e6f4ec;}
+.tc-chg.bad{color:#b33a3a;background:#fdeeee;}
+.tc-chg.neutral{color:#5f7385;background:#eef2f6;}
+.tc-none{color:#9aabba;font-weight:500;}
+#totalsTable th small{display:block;font-weight:500;text-transform:none;letter-spacing:0;color:#7b8fa0;font-size:0.68rem;margin-top:0.1rem;}
 .fm-hint{font-size:0.72rem;color:#7b8fa0;margin-top:0.3rem;}
 .fm-hint a{color:#0b5a8a;font-weight:700;cursor:pointer;text-decoration:underline;}
 .fm-note{margin-bottom:0.9rem;font-size:0.82rem;color:#35506a;background:#eef6ff;border:1px solid #b9d6f0;border-radius:12px;padding:0.65rem 0.9rem;}
@@ -903,7 +912,8 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       </div>
     </div>
     <div class="section-title"><i class="fas fa-chart-bar"></i> Computed totals</div>
-    <div class="table-card"><div class="table-scroll"><table id="totalsTable"><thead><tr><th>Metric</th><th>Value (UGX)</th></tr></thead><tbody id="totalsBody"></tbody></table></div></div>
+    <div id="totalsNote" style="font-size:0.78rem;color:#7b8fa0;margin:-0.4rem 0 0.7rem;"></div>
+    <div class="table-card"><div class="table-scroll"><table id="totalsTable"><thead id="totalsHead"><tr><th>Metric</th><th>Value (UGX)</th></tr></thead><tbody id="totalsBody"></tbody></table></div></div>
   </div>
 
   <!-- PURCHASES -->
@@ -4234,15 +4244,60 @@ function renderSummary(){
   const el = document.getElementById('summaryGrid'); if(!el) return;
   el.innerHTML = cards.map(c=>`<div class="sum-card"><div class="sum-label">${c.label}</div><div class="sum-value ${c.cls}">${c.value}</div><div class="sum-sub">${c.sub}</div></div>`).join('');
 }
+/* Computed totals: this month vs the same days of the two months before it */
+function shiftMonthKey(key, back){
+  const [y, m] = key.split('-').map(Number); const d = new Date(y, m - 1 - back, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function totalsSnapshot(mk, maxDay){
+  const m = allMonthsData[mk];
+  const rows = (m && Array.isArray(m.entries) ? m.entries : []).filter(r => r.date && (parseInt(String(r.date).slice(8, 10), 10) || 0) <= maxDay);
+  if(!rows.length) return { has: false };
+  const sum = f => rows.reduce((a, r) => a + (parseFloat(r[f]) || 0), 0);
+  const sales = sum('sales'), cost = sum('cost'), dailyExp = sum('expenses');
+  const gross = sales - cost - dailyExp, monthlyExp = totalMonthlyExpenses(m.expenses), net = gross - monthlyExp;
+  return { has: true, sales, cost, dailyExp, gross, monthlyExp, net, grossM: sales ? gross / sales * 100 : null, netM: sales ? net / sales * 100 : null, count: rows.length };
+}
+function totalsChange(cur, prev, kind, polarity, prevLabel){
+  // kind: 'pct' (percent change) or 'pts' (percentage-point change); polarity: 1 higher is better, -1 lower is better, 0 neutral
+  if(prev === null || prev === undefined || cur === null || cur === undefined) return '';
+  const diff = cur - prev; let label;
+  if(kind === 'pts'){ label = Math.abs(diff) < 0.05 ? '0.0 pts' : Math.abs(diff).toFixed(1) + ' pts'; }
+  else if(prev === 0){ label = cur === 0 ? '0%' : 'new'; }
+  else { const pct = diff / Math.abs(prev) * 100; label = Math.abs(pct) < 0.05 ? '0%' : Math.abs(pct).toFixed(1) + '%'; }
+  const flat = (kind === 'pts' ? Math.abs(diff) < 0.05 : diff === 0 || (prev !== 0 && Math.abs(diff / Math.abs(prev) * 100) < 0.05));
+  const icon = flat ? '\u25AC' : (diff > 0 ? '\u25B2' : '\u25BC');
+  const tone = (flat || polarity === 0) ? 'neutral' : ((diff > 0) === (polarity > 0) ? 'good' : 'bad');
+  return `<div class="tc-chg ${tone}"><span class="tc-arrow">${icon}</span> ${label} <small>vs ${prevLabel}</small></div>`;
+}
 function renderTotals(){
-  const entries = currentEntries(); const exp = currentExpenses();
-  const totalSales = entries.reduce((s,r)=>s+(parseFloat(r.sales)||0),0);
-  const totalCost = entries.reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
-  const totalDailyExp = entries.reduce((s,r)=>s+(parseFloat(r.expenses)||0),0);
-  const gross = totalSales-totalCost-totalDailyExp; const monthlyExp = totalMonthlyExpenses(exp); const net = gross-monthlyExp;
-  const rows = [['Total sales',fmt(totalSales)],['Total cost',fmt(totalCost)],['Daily expenses',fmt(totalDailyExp)],['Gross profit',fmt(gross)],['Total monthly expenses',fmt(monthlyExp)],['Net profit',fmt(net)],['Gross margin',totalSales?(gross/totalSales*100).toFixed(1)+'%':'—'],['Net margin',totalSales?(net/totalSales*100).toFixed(1)+'%':'—'],['Entry count',entries.length]];
   const el = document.getElementById('totalsBody'); if(!el) return;
-  el.innerHTML = rows.map(([k,v])=>`<tr><td style="font-weight:500;">${k}</td><td style="font-weight:600;">${v}</td></tr>`).join('');
+  const head = document.getElementById('totalsHead'), note = document.getElementById('totalsNote');
+  const entries = currentEntries();
+  const maxDay = entries.reduce((mx, r) => Math.max(mx, parseInt(String(r.date || '').slice(8, 10), 10) || 0), 0) || 31;
+  const keys = [0, 1, 2, 3].map(n => shiftMonthKey(currentMonthKey, n));
+  const snaps = keys.map(k => totalsSnapshot(k, maxDay));
+  const short = k => new Date(k + '-01').toLocaleString('en', { month: 'short', year: 'numeric' });
+  const monthShort = k => new Date(k + '-01').toLocaleString('en', { month: 'short' });
+  if(head) head.innerHTML = '<tr><th>Metric</th>' + keys.slice(0, 3).map((k, i) => `<th>${short(k)}<small>${i === 0 ? 'this month' : (i === 1 ? 'last month' : '2 months ago')}</small></th>`).join('') + '</tr>';
+  if(note) note.innerHTML = `<i class="fas fa-circle-info"></i> Each column covers day 1 to day ${maxDay} of its month, so the three months are compared over the same days. Arrows compare a month with the one before it. Monthly expenses are the full month's amount.`;
+  // metric definitions: [label, getter, formatter, kind, polarity]
+  const f0 = v => fmt(v), fp = v => v === null ? '—' : v.toFixed(1) + '%';
+  const defs = [
+    ['Total sales', s => s.sales, f0, 'pct', 1], ['Total cost', s => s.cost, f0, 'pct', 0], ['Daily expenses', s => s.dailyExp, f0, 'pct', -1],
+    ['Gross profit', s => s.gross, f0, 'pct', 1], ['Total monthly expenses', s => s.monthlyExp, f0, 'pct', -1], ['Net profit', s => s.net, f0, 'pct', 1],
+    ['Gross margin', s => s.grossM, fp, 'pts', 1], ['Net margin', s => s.netM, fp, 'pts', 1], ['Entry count', s => s.count, v => String(v), 'pct', 0]
+  ];
+  el.innerHTML = defs.map(([label, get, format, kind, pol]) => {
+    const cells = [0, 1, 2].map(i => {
+      const sn = snaps[i];
+      if(!sn.has) return `<td><span class="tc-none">${i === 0 ? '—' : 'No data'}</span></td>`;
+      const v = get(sn); const older = snaps[i + 1];
+      const chg = (older && older.has) ? totalsChange(v, get(older), kind, pol, monthShort(keys[i + 1])) : '';
+      return `<td><div class="tc-val">${v === null ? '—' : format(v)}</div>${chg}</td>`;
+    }).join('');
+    return `<tr><td style="font-weight:500;">${label}</td>${cells}</tr>`;
+  }).join('');
 }
 function renderPurchases(){
   const purchases = currentPurchases();
