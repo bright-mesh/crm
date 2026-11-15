@@ -463,6 +463,18 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .er-chips{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.8rem;}
 .er-chip{background:#fff;border:1px solid #d2dfeb;border-radius:999px;padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:#0b2b44;}
 .er-chip:hover{background:#eef6ff;}
+.er-chip.active{background:#0b2b44;color:#fff;border-color:#0b2b44;}
+.or-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:0.5rem;flex:0 0 auto;}
+.or-dot.green{background:#1d7a4b;}.or-dot.amber{background:#f5a623;}.or-dot.red{background:#e5484d;}.or-dot.grey{background:#9aabba;}
+.or-health{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.8rem;}
+.or-hcard{background:#fff;border:1px solid #e3ebf3;border-radius:14px;padding:0.8rem 1rem;}
+.or-hcard b{display:flex;align-items:center;font-size:0.85rem;color:#0b2b44;}
+.or-hcard span.st{margin-left:auto;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;}
+.or-hcard p{margin:0.35rem 0 0;font-size:0.76rem;color:#5f7385;}
+.or-attn{display:flex;gap:0.8rem;align-items:flex-start;background:#fff;border:1px solid #e3ebf3;border-radius:14px;padding:0.8rem 1rem;margin-bottom:0.6rem;}
+.or-attn .n{width:26px;height:26px;border-radius:50%;color:#fff;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.or-h2{font-size:1rem;font-weight:700;color:#0b2b44;margin:1.6rem 0 0.7rem;display:flex;align-items:center;gap:0.5rem;}
+.or-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;}
 .er-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;}
 .sf-locked{opacity:0.55;}
 .sf-locked select,.sf-locked input{background:#e9eef3 !important;color:#6a7f94;cursor:not-allowed;}
@@ -731,6 +743,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
     <div class="nav-group" data-group="reports">
       <button type="button" class="tab-btn nav-trigger" aria-haspopup="true" aria-expanded="false" onclick="toggleNavGroup(this)"><i class="fas fa-chart-column"></i> <span class="nav-label">Reports</span><span class="nav-current"></span> <i class="fas fa-chevron-down nav-caret"></i></button>
       <div class="nav-menu" role="menu">
+        <button class="tab-btn" data-tab="owner" data-perm="viewAudit" onclick="switchTab('owner')" role="menuitem"><i class="fas fa-file-lines"></i><span class="nav-item-text"><b>Owner Report</b><small>Full business overview, PDF and Excel</small></span></button>
         <button class="tab-btn" data-tab="shifts" data-perm="viewShifts" onclick="switchTab('shifts')" role="menuitem"><i class="fas fa-clock"></i><span class="nav-item-text"><b>Shifts History</b><small>Every cashier shift and its cash count</small></span></button>
         <button class="tab-btn" data-tab="expenses" data-perm="viewShifts" onclick="switchTab('expenses')" role="menuitem"><i class="fas fa-receipt"></i><span class="nav-item-text"><b>Expenses Report</b><small>What cashiers spent, by date</small></span></button>
         <button class="tab-btn" data-tab="history" data-perm="viewHistory" onclick="switchTab('history')" role="menuitem"><i class="fas fa-clock-rotate-left"></i><span class="nav-item-text"><b>Month History</b><small>Closed months and past totals</small></span></button>
@@ -1037,6 +1050,31 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   </div>
 
   <!-- MONTH HISTORY -->
+  <!-- OWNER REPORT -->
+  <div class="tab-panel" id="tab-owner">
+    <div class="table-card" style="padding:1.1rem 1.2rem;">
+      <div class="er-filters">
+        <div><label>From</label><input type="date" id="orFrom" onchange="orCustom()"></div>
+        <div><label>To</label><input type="date" id="orTo" onchange="orCustom()"></div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="orDownloadPdf()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+          <button class="btn" onclick="orDownloadExcel()"><i class="fas fa-file-excel"></i> Download Excel</button>
+        </div>
+      </div>
+      <div class="er-chips" id="orChips">
+        <span class="er-chip" data-k="today" onclick="orSetRange('today')">Today</span>
+        <span class="er-chip" data-k="yesterday" onclick="orSetRange('yesterday')">Yesterday</span>
+        <span class="er-chip" data-k="last7" onclick="orSetRange('last7')">Last 7 days</span>
+        <span class="er-chip" data-k="thisweek" onclick="orSetRange('thisweek')">This week</span>
+        <span class="er-chip" data-k="month" onclick="orSetRange('month')">This month</span>
+        <span class="er-chip" data-k="lastmonth" onclick="orSetRange('lastmonth')">Last month</span>
+        <span class="er-chip" data-k="last3" onclick="orSetRange('last3')">Last 3 months</span>
+        <span class="er-chip" data-k="year" onclick="orSetRange('year')">This year</span>
+      </div>
+    </div>
+    <div id="orPreview" style="margin-top:1rem;"></div>
+  </div>
+
   <!-- EXPENSES REPORT -->
   <div class="tab-panel" id="tab-expenses">
     <div class="table-card" style="padding:1.1rem 1.2rem;">
@@ -1569,7 +1607,7 @@ function hasPerm(perm){
   return !!merged[perm];
 }
 function applyTabPermissions(){
-  const permMap = { closure: 'editShifts', purchases: 'viewPurchases', daily: 'viewDaily', audit: 'viewAudit', shifts: 'viewShifts', expenses: 'viewShifts', history: 'viewHistory', log: 'viewLog', suppliers: 'viewSuppliers', team: 'manageUsers' };
+  const permMap = { closure: 'editShifts', purchases: 'viewPurchases', daily: 'viewDaily', audit: 'viewAudit', shifts: 'viewShifts', expenses: 'viewShifts', owner: 'viewAudit', history: 'viewHistory', log: 'viewLog', suppliers: 'viewSuppliers', team: 'manageUsers' };
   document.querySelectorAll('#userTabNav .tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     const perm = permMap[tab];
@@ -3852,6 +3890,383 @@ function onBalancingCreditInput(){
   refreshBalancingCredit();
 }
 
+/* ===================== OWNER REPORT ===================== */
+let orRangeKey = 'month', orLast = null;
+function orDays(from, to){ return Math.round((new Date(to + 'T00:00:00') - new Date(from + 'T00:00:00')) / 86400000) + 1; }
+function orAddDays(ymd, n){ const d = new Date(ymd + 'T00:00:00'); d.setDate(d.getDate() + n); return _ymd(d); }
+function orRangeFor(key){
+  const t = new Date(), today = _ymd(t);
+  if(key === 'today') return [today, today];
+  if(key === 'yesterday'){ const y = orAddDays(today, -1); return [y, y]; }
+  if(key === 'last7') return [orAddDays(today, -6), today];
+  if(key === 'thisweek'){ const dow = (t.getDay() + 6) % 7; return [orAddDays(today, -dow), today]; }
+  if(key === 'lastmonth') return [_ymd(new Date(t.getFullYear(), t.getMonth() - 1, 1)), _ymd(new Date(t.getFullYear(), t.getMonth(), 0))];
+  if(key === 'last3') return [_ymd(new Date(t.getFullYear(), t.getMonth() - 2, 1)), today];
+  if(key === 'year') return [_ymd(new Date(t.getFullYear(), 0, 1)), today];
+  return [_ymd(new Date(t.getFullYear(), t.getMonth(), 1)), today];
+}
+function orMarkChips(){ document.querySelectorAll('#orChips .er-chip').forEach(c => c.classList.toggle('active', c.dataset.k === orRangeKey)); }
+function orInit(){
+  const f = document.getElementById('orFrom'); if(!f) return;
+  if(!f.value){ const [a, b] = orRangeFor(orRangeKey === 'custom' ? 'month' : orRangeKey); f.value = a; document.getElementById('orTo').value = b; }
+  orMarkChips(); renderOwnerReport();
+}
+function orSetRange(key){ const [a, b] = orRangeFor(key); document.getElementById('orFrom').value = a; document.getElementById('orTo').value = b; orRangeKey = key; orMarkChips(); renderOwnerReport(); }
+function orCustom(){ orRangeKey = 'custom'; orMarkChips(); renderOwnerReport(); }
+function orCompareRange(from, to){
+  const f = new Date(from + 'T00:00:00'), t = new Date(to + 'T00:00:00');
+  if(f.getDate() === 1 && f.getFullYear() === t.getFullYear() && f.getMonth() === t.getMonth()){
+    const pf = new Date(f.getFullYear(), f.getMonth() - 1, 1), last = new Date(f.getFullYear(), f.getMonth(), 0).getDate();
+    const pt = new Date(pf.getFullYear(), pf.getMonth(), Math.min(t.getDate(), last));
+    return { from: _ymd(pf), to: _ymd(pt), label: 'same days of last month', short: 'last month' };
+  }
+  const n = orDays(from, to);
+  return { from: orAddDays(from, -n), to: orAddDays(from, -1), label: `the previous ${n} day${n > 1 ? 's' : ''}`, short: 'prev. period' };
+}
+function orMetrics(from, to){
+  const inR = d => d && d >= from && d <= to, num = v => parseFloat(v) || 0;
+  const dayMap = {}; let sales = 0, cost = 0, dailyExp = 0;
+  Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].entries || []).forEach(r => {
+    if(!inR(r.date)) return;
+    const d = (dayMap[r.date] = dayMap[r.date] || { date: r.date, sales: 0, cost: 0, exp: 0 });
+    d.sales += num(r.sales); d.cost += num(r.cost); d.exp += num(r.expenses); sales += num(r.sales); cost += num(r.cost); dailyExp += num(r.expenses);
+  }));
+  const dayList = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
+  // monthly expenses are spread over the days of their month, so any date range gets its fair share
+  const monthlyByType = {}; let monthly = 0;
+  Object.keys(allMonthsData).forEach(mk => {
+    const [y, m] = mk.split('-').map(Number), dim = new Date(y, m, 0).getDate();
+    const ms = mk + '-01', me = mk + '-' + String(dim).padStart(2, '0'), a = from > ms ? from : ms, b = to < me ? to : me;
+    if(a > b) return; const share = orDays(a, b) / dim;
+    const ex = allMonthsData[mk].expenses; if(!Array.isArray(ex)) return;
+    ex.forEach(e => { const amt = num(e.amount) * share; if(!amt) return; const t = e.type || 'Other'; monthlyByType[t] = (monthlyByType[t] || 0) + amt; monthly += amt; });
+  });
+  const gross = sales - cost - dailyExp, net = gross - monthly;
+  // shifts
+  const sh = allShifts.filter(x => inR(x.date)), closed = sh.filter(x => x.status === 'closed');
+  const S = { count: sh.length, closedCount: closed.length, sales: 0, mtn: 0, airtel: 0, bank: 0, creditSales: 0, creditRepay: 0, voids: 0, tillExp: 0, tillPurch: 0, net: 0, short: 0, over: 0, shortShifts: 0, auto: 0, reopened: 0, edited: 0, manual: 0 };
+  const byC = {}, byP = {};
+  sh.forEach(x => {
+    S.sales += num(x.closingSales ?? x.sales); S.mtn += num(x.mtn); S.airtel += num(x.airtel); S.bank += num(x.bank); S.creditSales += num(x.creditSales); S.creditRepay += num(x.creditRepay);
+    S.voids += num(x.voids); S.tillExp += num(x.expenses); S.tillPurch += num(x.purchasesPaid);
+    if(x.closedBy === 'auto') S.auto++; if(x.reopenedByCashier) S.reopened++; if(x.manualEntry) S.manual++; else if(x.editedBy) S.edited++;
+    const name = x.cashierName || x.cashier || '—'; const c = (byC[name] = byC[name] || { name, shifts: 0, sales: 0, net: 0, short: 0, shortShifts: 0, voids: 0 });
+    c.shifts++; c.sales += num(x.closingSales ?? x.sales); c.voids += num(x.voids);
+    const pk = x.period || 'morning'; const pp = (byP[pk] = byP[pk] || { period: pk, shifts: 0, sales: 0, net: 0 }); pp.shifts++; pp.sales += num(x.closingSales ?? x.sales);
+    if(x.status === 'closed'){
+      const d = num(x.difference); S.net += d; c.net += d; pp.net += d;
+      if(d > 0.5) S.over += d; if(d < -0.5){ S.short += -d; S.shortShifts++; c.short += -d; c.shortShifts++; }
+    }
+  });
+  S.cashSales = S.sales - S.mtn - S.airtel - S.bank - S.creditSales;
+  // purchases
+  const pur = []; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(p => { if(inR(p.date)) pur.push(p); }));
+  const P = { count: pur.length, total: 0, cash: 0, credit: 0, mobile: 0, other: 0 }, bySup = {};
+  pur.forEach(p => {
+    const t = num(p.total), k = (p.payment || '').toLowerCase(); P.total += t;
+    if(k === 'cash') P.cash += t; else if(k === 'credit') P.credit += t; else if(k.includes('mobile')) P.mobile += t; else P.other += t;
+    const name = (p.supplier || '').trim() || '(Unnamed)'; const r = (bySup[name] = bySup[name] || { name, count: 0, total: 0, credit: 0 }); r.count++; r.total += t; if(k === 'credit') r.credit += t;
+  });
+  return { from, to, days: orDays(from, to), dayList, sales, cost, dailyExp, monthly, monthlyByType, gross, net,
+    grossM: sales ? gross / sales * 100 : null, netM: sales ? net / sales * 100 : null, totalExp: dailyExp + monthly, S, P,
+    byCashier: Object.values(byC).sort((a, b) => b.sales - a.sales), byPeriod: ['morning', 'afternoon', 'evening'].map(k => byP[k]).filter(Boolean),
+    bySupplier: Object.values(bySup).sort((a, b) => b.total - a.total) };
+}
+function orLedger(upTo){
+  const rows = Object.values(buildLedger(upTo));
+  const owed = rows.reduce((a, r) => a + Math.max(0, r.balance), 0), over = rows.reduce((a, r) => a + Math.max(0, -r.balance), 0);
+  return { owed, over, top: rows.filter(r => r.balance > 0.5).sort((a, b) => b.balance - a.balance) };
+}
+function orAscii(v){   // the PDF's built-in font only knows basic Latin characters
+  return String(v == null ? '' : v).replace(/\u2260/g, ' differs from ').replace(/[\u2212\u2013\u2014\u2011]/g, '-').replace(/\u2192/g, ' to ').replace(/[\u2022\u00b7]/g, '-')
+    .replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'").replace(/\u2026/g, '...').replace(/[^\x09\x0a\x0d\x20-\x7e\u00a0-\u00ff]/g, '?').replace(/[ ]{2,}/g, ' ').trim();
+}
+function orPlain(h){ return String(h || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim(); }
+function orSuggest(title){
+  const t = (title || '').toLowerCase();
+  if(/balancing record/.test(t)) return 'Enter more Daily Balancing records so cash flow and stock can be checked.';
+  if(/variance|purchases.{0,3}cost/.test(t)) return 'Compare supplier invoices with the daily cost entries for the period.';
+  if(/extra/.test(t) && /cash/.test(t)) return 'Find out why more cash than expected was counted.';
+  if(/closed automatically/.test(t)) return 'Ask the cashier to re-open the shift (if recent) or correct it from Shifts History.';
+  if(/re-open/.test(t)) return 'Check that the late finishes were genuine.';
+  if(/purchases? (recorded|booked)/.test(t)) return 'Move these items to Purchases paid from till.';
+  if(/without (a )?supplier|supplier name/.test(t)) return 'Add the supplier name so it matches Daily Purchases.';
+  if(/not recorded in daily purchases/.test(t)) return 'Enter the missing purchases in Daily Purchases.';
+  if(/credit/.test(t)) return 'Compare the balancing sheet with the Suppliers ledger and correct the entry.';
+  if(/short|cash/.test(t)) return 'Recount with the cashier and check the shift records.';
+  if(/sales|mismatch|differ/.test(t)) return 'Reconcile daily sales with the shift totals.';
+  if(/expense/.test(t)) return 'Review the itemised expenses and receipts.';
+  if(/stock/.test(t)) return 'Recount stock and check the cost entries.';
+  return 'Review the evidence and record the outcome.';
+}
+function buildOwnerReport(from, to){
+  const cmp = orCompareRange(from, to), cur = orMetrics(from, to), prev = orMetrics(cmp.from, cmp.to);
+  const lNow = orLedger(to), lPrev = orLedger(cmp.to);
+  let issues = { red: [], amber: [], green: [] };
+  try { issues = runAuditWithRange({ silent: true, from, to }) || issues; } catch(e) { console.warn('Audit engine failed', e); }
+  const findings = [...issues.red.map(i => ({ sev: 'Red', title: i.title, detail: orPlain(i.desc) })), ...issues.amber.map(i => ({ sev: 'Amber', title: i.title, detail: orPlain(i.desc) }))].map(f => ({ ...f, action: orSuggest(f.title) }));
+  const kpis = [
+    { key: 'sales', label: 'Total sales', cur: cur.sales, prev: prev.sales, pol: 1 },
+    { key: 'gross', label: 'Gross profit', cur: cur.gross, prev: prev.gross, pol: 1 },
+    { key: 'net', label: 'Net profit', cur: cur.net, prev: prev.net, pol: 1 },
+    { key: 'exp', label: 'Total expenses', cur: cur.totalExp, prev: prev.totalExp, pol: -1 },
+    { key: 'cash', label: 'Cash difference', cur: cur.S.net, prev: prev.S.net, pol: 1, signed: true },
+    { key: 'credit', label: 'Owed to suppliers', cur: lNow.owed, prev: lPrev.owed, pol: -1 }
+  ];
+  // health checks
+  const health = [];
+  { // cash control
+    const S = cur.S;
+    if(!S.closedCount) health.push({ name: 'Cash control', st: 'grey', text: 'No closed shifts in this period.' });
+    else { const ratio = S.cashSales > 0 ? S.short / S.cashSales : 0; const st = ratio >= 0.005 ? 'red' : (ratio >= 0.002 ? 'amber' : 'green');
+      health.push({ name: 'Cash control', st, text: `Shortages UGX ${fmt(S.short)} (${(ratio * 100).toFixed(2)}% of cash sales) over ${S.shortShifts} of ${S.closedCount} shifts. Net difference ${fmtSigned(S.net)}.` }); }
+  }
+  { // supplier credit
+    const g = lPrev.owed > 0 ? (lNow.owed - lPrev.owed) / lPrev.owed : (lNow.owed > 0 ? 1 : 0);
+    let st = lNow.owed === 0 && lNow.over === 0 ? 'green' : (g > 0.5 ? 'red' : (g > 0.2 || lNow.over > 0 ? 'amber' : 'green'));
+    health.push({ name: 'Supplier credit', st, text: lNow.owed === 0 ? 'No supplier credit outstanding.' : `Owed UGX ${fmt(lNow.owed)}, ${g >= 0 ? 'up' : 'down'} ${Math.abs(g * 100).toFixed(0)}% on ${cmp.short}.${lNow.over > 0 ? ' Some suppliers are overpaid.' : ''}` });
+  }
+  { // expenses
+    if(!cur.sales) health.push({ name: 'Expenses', st: 'grey', text: 'No sales recorded in this period.' });
+    else { const rn = cur.totalExp / cur.sales * 100, rp = prev.sales ? prev.totalExp / prev.sales * 100 : null;
+      const st = rp === null ? 'grey' : (rn - rp > 6 ? 'red' : (rn - rp > 3 ? 'amber' : 'green'));
+      health.push({ name: 'Expenses', st, text: `Expenses are ${rn.toFixed(1)}% of sales${rp === null ? '.' : ` (${rp.toFixed(1)}% in ${cmp.short}).`}` }); }
+  }
+  { // sales matching
+    if(!cur.S.count || !cur.sales) health.push({ name: 'Sales matching', st: 'grey', text: 'Needs both daily sales and shifts in the period.' });
+    else { const gap = Math.abs(cur.sales - cur.S.sales) / cur.sales; const st = gap > 0.03 ? 'red' : (gap > 0.01 ? 'amber' : 'green');
+      health.push({ name: 'Sales matching', st, text: `Daily sales UGX ${fmt(cur.sales)} vs shift sales UGX ${fmt(cur.S.sales)} (gap ${(gap * 100).toFixed(1)}%).` }); }
+  }
+  // attention list
+  const attention = [];
+  findings.forEach(f => { if(attention.length < 3) attention.push({ sev: f.sev.toLowerCase(), title: f.title, text: f.detail.length > 150 ? f.detail.slice(0, 147) + '...' : f.detail }); });
+  health.filter(h => h.st === 'red' || h.st === 'amber').forEach(h => { if(attention.length < 3 && !attention.some(a => a.title.toLowerCase().includes(h.name.toLowerCase()))) attention.push({ sev: h.st, title: h.name, text: h.text }); });
+  // sales & profit extras
+  const dl = cur.dayList, dow = [0, 1, 2, 3, 4, 5, 6].map(i => { const a = dl.filter(d => new Date(d.date + 'T00:00:00').getDay() === i); return { name: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i], n: a.length, avg: a.length ? a.reduce((t, d) => t + d.sales, 0) / a.length : 0 }; });
+  const byS = dl.slice().sort((a, b) => b.sales - a.sales);
+  const best = byS.slice(0, 3), worst = dl.length >= 6 ? byS.slice(-3).reverse() : [];
+  const gm = cur.sales ? cur.gross / cur.sales : 0;
+  const breakEven = gm > 0 && cur.monthly > 0 ? cur.monthly / gm : null, bePerDay = breakEven ? breakEven / cur.days : null;
+  const daysAbove = bePerDay ? dl.filter(d => d.sales >= bePerDay).length : null;
+  const S = cur.S, mix = [['Cash sales', S.cashSales], ['MTN MoMo', S.mtn], ['Airtel Money', S.airtel], ['Bank / card', S.bank], ['Credit sales', S.creditSales]].map(([k, v]) => ({ name: k, amount: v, pct: S.sales ? v / S.sales * 100 : 0 }));
+  // expenses
+  const tillItems = cashierExpenseItems(from, to), tillByType = erGroup(tillItems, i => i.type), tillByCashier = erGroup(tillItems, i => i.cashierName);
+  const monthlyTypes = Object.entries(cur.monthlyByType).map(([k, v]) => ({ key: k, total: v })).sort((a, b) => b.total - a.total);
+  // latest balancing on or before the end date
+  const closure = weeklyClosures.filter(c => c.date <= to).sort((a, b) => a.date.localeCompare(b.date)).pop() || null;
+  const cov = shiftsCoverageStart();
+  return { from, to, cmp, cur, prev, kpis, health, attention, findings, issues, lNow, lPrev, dow, best, worst, byCashier: cur.byCashier, byPeriod: cur.byPeriod, breakEven, bePerDay, daysAbove, mix, tillItems, tillByType, tillByCashier, monthlyTypes, closure,
+    coverageNote: (cov && from < cov) ? `Only shifts from ${cov} onward are loaded, so shift figures before that date may be incomplete.` : '',
+    location: (currentUser && (currentUser.locationName || currentLocationId)) || '', generated: new Date() };
+}
+function orKpiValue(k){ return k.signed ? fmtSigned(k.cur) : fmt(k.cur); }
+function orTbl(head, rows, rightFrom){
+  const th = head.map((h, i) => `<th${rightFrom !== undefined && i >= rightFrom ? ' style="text-align:right;"' : ''}>${h}</th>`).join('');
+  const body = rows.length ? rows.map(r => `<tr>${r.map((c, i) => `<td${rightFrom !== undefined && i >= rightFrom ? ' style="text-align:right;"' : ''}>${c}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${head.length}" style="text-align:center;padding:1rem;color:#7b8fa0;">Nothing in this period.</td></tr>`;
+  return `<div class="table-card"><div class="table-scroll"><table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div></div>`;
+}
+function renderOwnerReport(){
+  const box = document.getElementById('orPreview'); if(!box) return;
+  let from = document.getElementById('orFrom').value, to = document.getElementById('orTo').value;
+  if(!from || !to){ box.innerHTML = ''; return; }
+  if(from > to){ const t = from; from = to; to = t; document.getElementById('orFrom').value = from; document.getElementById('orTo').value = to; }
+  const r = orLast = buildOwnerReport(from, to), c = r.cur, S = c.S, P = c.P;
+  const stLabel = { green: 'Healthy', amber: 'Watch', red: 'Act now', grey: 'No data' }, stCol = { green: '#1d7a4b', amber: '#b06d00', red: '#b33a3a', grey: '#7b8fa0' };
+  const prettyD = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  let h = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;align-items:baseline;"><div class="or-h2" style="margin:0;"><i class="fas fa-gauge-high"></i> Scorecard</div><div style="font-size:0.78rem;color:#7b8fa0;">${prettyD(from)} to ${prettyD(to)} (${c.days} day${c.days > 1 ? 's' : ''}). Compared with ${esc(r.cmp.label)}.</div></div>`;
+  if(r.coverageNote) h += `<div style="margin:0.6rem 0;padding:0.6rem 1rem;background:#fff6e0;border:1px solid #f0d58a;border-radius:10px;font-size:0.8rem;color:#7a5200;">${esc(r.coverageNote)}</div>`;
+  h += '<div class="summary-grid" style="margin-top:0.8rem;">' + r.kpis.map(k => `<div class="sum-card"><div class="sum-label">${k.label}</div><div class="sum-value" style="font-size:1.25rem;">${orKpiValue(k)}</div>${totalsChange(k.cur, k.prev, 'pct', k.pol, r.cmp.short)}</div>`).join('') + '</div>';
+  h += '<div class="or-h2"><i class="fas fa-heart-pulse"></i> Health checks</div><div class="or-health">' + r.health.map(x => `<div class="or-hcard"><b><span class="or-dot ${x.st}"></span>${x.name}<span class="st" style="color:${stCol[x.st]};">${stLabel[x.st]}</span></b><p>${esc(x.text)}</p></div>`).join('') + '</div>';
+  h += '<div class="or-h2"><i class="fas fa-bullseye"></i> What needs your attention</div>' + (r.attention.length ? r.attention.map((a, i) => `<div class="or-attn"><div class="n" style="background:${a.sev === 'red' ? '#e5484d' : '#f5a623'};">${i + 1}</div><div><b style="font-size:0.88rem;color:#0b2b44;">${esc(a.title)}</b><div style="font-size:0.78rem;color:#5f7385;margin-top:0.15rem;">${esc(a.text)}</div></div></div>`).join('') : '<div class="or-attn"><div class="n" style="background:#1d7a4b;">&#10003;</div><div><b style="font-size:0.88rem;color:#0b2b44;">Nothing urgent</b><div style="font-size:0.78rem;color:#5f7385;">No red or amber findings for this period.</div></div></div>');
+  // sales & profit
+  const chgCell = (a, b, pol, kind) => totalsChange(a, b, kind || 'pct', pol, r.cmp.short);
+  const pl = [['Total sales', c.sales, r.prev.sales, 1], ['Total cost', c.cost, r.prev.cost, 0], ['Daily expenses', c.dailyExp, r.prev.dailyExp, -1], ['Gross profit', c.gross, r.prev.gross, 1], ['Monthly expenses (share)', c.monthly, r.prev.monthly, -1], ['Net profit', c.net, r.prev.net, 1]];
+  h += '<div class="or-h2"><i class="fas fa-chart-line"></i> Sales and profit</div><div class="or-two"><div>' + orTbl(['Metric', 'This period', 'Previous', 'Change'], pl.map(([n, a, b, pol]) => [n, fmt(a), fmt(b), chgCell(a, b, pol)]).concat([['Gross margin', fmtPct(c.grossM), fmtPct(r.prev.grossM), c.grossM !== null && r.prev.grossM !== null ? chgCell(c.grossM, r.prev.grossM, 1, 'pts') : '—'], ['Net margin', fmtPct(c.netM), fmtPct(r.prev.netM), c.netM !== null && r.prev.netM !== null ? chgCell(c.netM, r.prev.netM, 1, 'pts') : '—']]), 1) + '</div><div>' +
+    orTbl(['Payment mix (shifts)', 'Amount', 'Share'], r.mix.map(m => [m.name, fmt(m.amount), m.pct.toFixed(1) + '%']), 1) +
+    `<div class="or-attn" style="margin-top:0.8rem;"><div class="n" style="background:#2f80ed;"><i class="fas fa-scale-balanced" style="font-size:0.7rem;"></i></div><div style="font-size:0.8rem;color:#5f7385;"><b style="color:#0b2b44;">Break-even</b><br>${r.breakEven ? `Monthly costs need about UGX ${fmt(r.breakEven)} of sales in this period (UGX ${fmt(r.bePerDay)} a day). ${r.daysAbove} of ${c.dayList.length} recorded days reached it.` : 'Not enough data to work out a break-even.'}</div></div></div></div>`;
+  h += '<div class="or-two" style="margin-top:1rem;"><div>' + orTbl(['Best and worst days', 'Sales'], r.best.map(d => ['Best: ' + prettyD(d.date), fmt(d.sales)]).concat(r.worst.map(d => ['Lowest: ' + prettyD(d.date), fmt(d.sales)])), 1) + '</div><div>' + orTbl(['Day of week', 'Days', 'Average sales'], r.dow.filter(d => d.n).map(d => [d.name, d.n, fmt(d.avg)]), 1) + '</div></div>';
+  // cash & shifts
+  h += `<div class="or-h2"><i class="fas fa-cash-register"></i> Cash and shifts</div><div class="summary-grid"><div class="sum-card"><div class="sum-label">Shifts</div><div class="sum-value">${S.count}</div><div class="sum-sub">${S.closedCount} closed</div></div><div class="sum-card ${S.short > 0 ? 'flag-amber' : ''}"><div class="sum-label">Shortages</div><div class="sum-value">${fmt(S.short)}</div><div class="sum-sub">${S.shortShifts} shift(s)</div></div><div class="sum-card"><div class="sum-label">Overages</div><div class="sum-value">${fmt(S.over)}</div></div><div class="sum-card"><div class="sum-label">Net difference</div><div class="sum-value">${fmtSigned(S.net)}</div></div></div>`;
+  h += '<div class="or-two" style="margin-top:1rem;"><div>' + orTbl(['Cashier', 'Shifts', 'Sales', 'Net diff.', 'Short shifts'], r.byCashier.map(x => [esc(x.name), x.shifts, fmt(x.sales), fmtSigned(x.net), x.shortShifts]), 1) + '</div><div>' + orTbl(['Period', 'Shifts', 'Sales', 'Net diff.'], r.byPeriod.map(x => [periodLabel(x.period), x.shifts, fmt(x.sales), fmtSigned(x.net)]), 1) +
+    orTbl(['Shift controls', 'Count'], [['Closed by the system', S.auto], ['Re-opened by cashier', S.reopened], ['Edited by a manager', S.edited], ['Added manually', S.manual], ['Voids and refunds (UGX)', fmt(S.voids)]], 1).replace('<div class="table-card">', '<div class="table-card" style="margin-top:0.8rem;">') + '</div></div>';
+  // purchasing
+  h += `<div class="or-h2"><i class="fas fa-truck"></i> Purchasing and suppliers</div><div class="summary-grid"><div class="sum-card"><div class="sum-label">Purchases</div><div class="sum-value">${fmt(P.total)}</div><div class="sum-sub">${P.count} entries</div></div><div class="sum-card"><div class="sum-label">Paid in cash</div><div class="sum-value">${fmt(P.cash)}</div></div><div class="sum-card"><div class="sum-label">On credit</div><div class="sum-value">${fmt(P.credit)}</div></div><div class="sum-card ${r.lNow.owed > 0 ? 'flag-amber' : ''}"><div class="sum-label">Owed to suppliers</div><div class="sum-value">${fmt(r.lNow.owed)}</div><div class="sum-sub">at ${prettyD(to)}</div></div></div>`;
+  const variance = P.total - c.cost;
+  h += `<div style="font-size:0.8rem;color:#5f7385;margin:0.7rem 0;">Purchases against recorded cost: ${fmtSigned(variance)} (${variance >= 0 ? 'bought more than sold at cost, stock is building up' : 'sold more than bought at cost, stock is running down'}). Purchases paid from the till: UGX ${fmt(S.tillPurch)}.</div>`;
+  h += '<div class="or-two"><div>' + orTbl(['Top suppliers by spend', 'Entries', 'Total', 'On credit'], r.cur.bySupplier.slice(0, 8).map(x => [esc(x.name), x.count, fmt(x.total), fmt(x.credit)]), 1) + '</div><div>' + orTbl(['Who is owed', 'Balance', 'Last payment'], r.lNow.top.slice(0, 8).map(x => [esc(x.name), fmt(x.balance), x.lastPay || '—']), 1) + '</div></div>';
+  // expenses, stock, findings
+  const expTotal = r.monthlyTypes.reduce((a, x) => a + x.total, 0) + r.tillByType.reduce((a, x) => a + x.total, 0);
+  const typeRows = r.monthlyTypes.map(x => [esc(x.key) + ' (monthly share)', fmt(x.total)]).concat(r.tillByType.map(x => [esc(x.key) + ' (till)', fmt(x.total)]));
+  h += '<div class="or-h2"><i class="fas fa-receipt"></i> Expenses, stock and findings</div><div class="or-two"><div>' + orTbl(['Expenses by type', 'Amount'], typeRows, 1) + '</div><div>' + orTbl(['Till expenses by cashier', 'Items', 'Amount'], r.tillByCashier.map(x => [esc(x.key), x.count, fmt(x.total)]), 1) +
+    (r.closure ? orTbl(['Latest balancing, ' + prettyD(r.closure.date), 'UGX'], [['Stock at cost', fmt(r.closure.stockCost ?? r.closure.stock)], ['Stock at selling price', fmt(r.closure.stockPrice)], ['Credit owed', fmt(r.closure.credit)], ['Cash at hand', fmt(r.closure.cash)], ['Net position (cash + stock at cost − credit)', fmt((+r.closure.cash || 0) + (+(r.closure.stockCost ?? r.closure.stock) || 0) - (+r.closure.credit || 0))]], 1).replace('<div class="table-card">', '<div class="table-card" style="margin-top:0.8rem;">') : '<div class="or-attn" style="margin-top:0.8rem;"><div style="font-size:0.8rem;color:#5f7385;">No Daily Balancing record on or before this date.</div></div>') + '</div></div>';
+  h += '<div class="or-h2"><i class="fas fa-magnifying-glass"></i> Audit findings</div>' + orTbl(['Level', 'Finding', 'Detail', 'Suggested action'], r.findings.map(f => [`<span class="badge-pill ${f.sev === 'Red' ? 'red' : 'amber'}">${f.sev}</span>`, esc(f.title), esc(f.detail), esc(f.action)]));
+  box.innerHTML = h;
+}
+function orFileStem(r){ return `Owner_Report_${r.from}_to_${r.to}`; }
+function orDownloadExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('Excel library not loaded', 'error'); return; }
+  renderOwnerReport(); const r = orLast; if(!r) return; const c = r.cur, S = c.S, P = c.P;
+  const wb = XLSX.utils.book_new(), add = (name, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Note: 'Nothing in this period' }]), name);
+  add('Scorecard', r.kpis.map(k => ({ Metric: k.label, 'This period': k.cur, ['Previous (' + r.cmp.short + ')']: k.prev, Change: k.prev ? +((k.cur - k.prev) / Math.abs(k.prev) * 100).toFixed(1) + '%' : '' })).concat(r.health.map(h => ({ Metric: 'Health: ' + h.name, 'This period': h.st.toUpperCase(), ['Previous (' + r.cmp.short + ')']: h.text }))));
+  add('Profit and loss', [['Total sales', c.sales, r.prev.sales], ['Total cost', c.cost, r.prev.cost], ['Daily expenses', c.dailyExp, r.prev.dailyExp], ['Gross profit', c.gross, r.prev.gross], ['Monthly expenses (share of month)', c.monthly, r.prev.monthly], ['Net profit', c.net, r.prev.net]].map(([m, a, b]) => ({ Metric: m, 'This period': Math.round(a), Previous: Math.round(b) })).concat([{ Metric: 'Gross margin %', 'This period': c.grossM === null ? '' : +c.grossM.toFixed(1), Previous: r.prev.grossM === null ? '' : +r.prev.grossM.toFixed(1) }, { Metric: 'Net margin %', 'This period': c.netM === null ? '' : +c.netM.toFixed(1), Previous: r.prev.netM === null ? '' : +r.prev.netM.toFixed(1) }]));
+  add('Daily', c.dayList.map(d => ({ Date: d.date, Sales: d.sales, Cost: d.cost, Expenses: d.exp, 'Gross profit': d.sales - d.cost - d.exp })));
+  add('Payment mix', r.mix.map(m => ({ Channel: m.name, Amount: Math.round(m.amount), 'Share %': +m.pct.toFixed(1) })));
+  add('By cashier', r.byCashier.map(x => ({ Cashier: x.name, Shifts: x.shifts, Sales: x.sales, 'Net difference': x.net, Shortages: x.short, 'Short shifts': x.shortShifts, Voids: x.voids })));
+  add('By period', r.byPeriod.map(x => ({ Period: periodLabel(x.period), Shifts: x.shifts, Sales: x.sales, 'Net difference': x.net })));
+  add('Purchases by supplier', c.bySupplier.map(x => ({ Supplier: x.name, Entries: x.count, Total: x.total, 'On credit': x.credit })));
+  add('Owed to suppliers', r.lNow.top.map(x => ({ Supplier: x.name, Balance: Math.round(x.balance), 'Last payment': x.lastPay || '', 'Oldest credit': x.oldestCredit || '' })));
+  add('Expenses', r.monthlyTypes.map(x => ({ Source: 'Monthly (share of month)', Type: x.key, Amount: Math.round(x.total) })).concat(r.tillItems.map(i => ({ Source: 'Till: ' + i.cashierName, Type: i.type, Date: i.date, Description: i.description, Amount: i.amount }))));
+  add('Findings', r.findings.map(f => ({ Level: f.sev, Finding: f.title, Detail: f.detail, 'Suggested action': f.action, 'Owner notes': '' })));
+  XLSX.writeFile(wb, orFileStem(r) + '.xlsx');
+}
+function orDownloadPdf(){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ showToast('PDF library not loaded', 'error'); return; }
+  renderOwnerReport(); const r = orLast; if(!r) return;
+  try { const doc = orBuildPdf(r); doc.save(orFileStem(r) + '.pdf'); showToast('Owner report downloaded', 'success'); }
+  catch(e) { console.error(e); showToast('Could not build the PDF: ' + e.message, 'error'); }
+}
+function orBuildPdf(r){
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const _tx = doc.text.bind(doc); doc.text = (t, ...a) => _tx(Array.isArray(t) ? t.map(orAscii) : orAscii(t), ...a);
+  const W = 210, M = 14, C = { navy: [11, 43, 68], green: [29, 122, 75], mint: [230, 244, 236], red: [229, 72, 77], redBg: [253, 238, 238], amber: [245, 166, 35], amberBg: [255, 244, 220], ink: [20, 40, 59], muted: [95, 115, 133], line: [227, 235, 243], paper: [246, 249, 252], blue: [47, 128, 237], white: [255, 255, 255], grey: [154, 171, 186] };
+  const n0 = v => (Math.round(v) < 0 ? '-' : '') + Math.abs(Math.round(v)).toLocaleString('en-US'), sg = v => (v > 0.5 ? '+' : (v < -0.5 ? '-' : '')) + Math.abs(Math.round(v)).toLocaleString('en-US');
+  const pct1 = v => v === null || v === undefined ? '-' : v.toFixed(1) + '%';
+  const pd = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const fill = c => doc.setFillColor(...c), draw = c => doc.setDrawColor(...c), ink = c => doc.setTextColor(...c);
+  const font = (st, sz) => { doc.setFont('helvetica', st); doc.setFontSize(sz); };
+  const bands = new Set(); let sectionTitle = '';
+  const band = () => {
+    const pg = doc.internal.getCurrentPageInfo().pageNumber; if(bands.has(pg)) return; bands.add(pg);
+    fill(C.navy); doc.rect(0, 0, W, 22, 'F'); fill(C.green); doc.roundedRect(M, 6, 10, 10, 2.5, 2.5, 'F');
+    draw(C.white); doc.setLineWidth(0.5); doc.rect(M + 2.6, M - 6.6 + 0, 4.8, 4.8); 
+    font('bold', 13); ink(C.white); doc.text("Owner's Business Review", M + 14, 11.5);
+    font('normal', 7.5); ink([190, 205, 218]); doc.text(`${r.location}  |  ${pd(r.from)} to ${pd(r.to)}`, M + 14, 16.5);
+    font('bold', 8); ink([120, 224, 160]); doc.text(sectionTitle.toUpperCase(), W - M, 11.5, { align: 'right' });
+  };
+  const page = (title, first) => { sectionTitle = title; if(!first) doc.addPage(); band(); };
+  const h2 = (t, y) => { font('bold', 11); ink(C.navy); doc.text(t, M, y); return y + 5; };
+  const tag = (x, y, cur, prev, pol, kind, short) => {   // coloured arrow + percentage
+    if(prev === null || prev === undefined || cur === null || cur === undefined) return;
+    const diff = cur - prev; let label;
+    if(kind === 'pts') label = Math.abs(diff) < 0.05 ? '0.0 pts' : Math.abs(diff).toFixed(1) + ' pts';
+    else if(prev === 0) label = cur === 0 ? '0%' : 'new'; else { const p = diff / Math.abs(prev) * 100; label = Math.abs(p) < 0.05 ? '0%' : Math.abs(p).toFixed(1) + '%'; }
+    const flat = Math.abs(diff) < 1e-9 || label === '0%' || label === '0.0 pts';
+    const col = (flat || pol === 0) ? C.grey : ((diff > 0) === (pol > 0) ? C.green : C.red);
+    fill(col);
+    if(flat) doc.rect(x, y - 0.4, 2.4, 0.8, 'F'); else if(diff > 0) doc.triangle(x, y + 1, x + 2.6, y + 1, x + 1.3, y - 1.4, 'F'); else doc.triangle(x, y - 1.2, x + 2.6, y - 1.2, x + 1.3, y + 1.2, 'F');
+    font('bold', 7); ink(col); doc.text(label, x + 3.6, y + 0.9); const w = doc.getTextWidth(label);
+    font('normal', 6.5); ink(C.muted); doc.text('vs ' + short, x + 3.6 + w + 1.2, y + 0.9);
+  };
+  const tile = (x, y, w, h, label, value, extra) => {
+    fill(C.white); draw(C.line); doc.setLineWidth(0.25); doc.roundedRect(x, y, w, h, 2.5, 2.5, 'FD');
+    font('bold', 6.3); ink(C.muted); doc.text(label.toUpperCase(), x + 4, y + 6);
+    font('bold', 12.5); ink(C.navy); doc.text(value, x + 4, y + 13.5); if(extra) extra(x + 4, y + h - 4.2);
+  };
+  const table = (opts) => {
+    const userParse = opts.didParseCell;
+    doc.autoTable({ theme: 'plain', styles: { fontSize: 7.6, cellPadding: 1.9, textColor: C.ink, lineColor: C.line, lineWidth: 0.1, overflow: 'linebreak' }, headStyles: { fillColor: C.navy, textColor: C.white, fontStyle: 'bold', fontSize: 7.2 },
+      alternateRowStyles: { fillColor: C.paper }, rowPageBreak: 'avoid', margin: { left: M, right: M, top: 28, bottom: 18 }, ...opts, didDrawPage: () => band(),
+      didParseCell: d => { if(d.cell && Array.isArray(d.cell.text)) d.cell.text = d.cell.text.map(orAscii); if(userParse) userParse(d); } });
+    return doc.lastAutoTable.finalY;
+  };
+  const half = (side, extra) => ({ margin: { left: side === 0 ? M : W / 2 + 2, right: side === 0 ? W / 2 + 2 : M, top: 28, bottom: 18 }, ...extra });
+  const c = r.cur, S = c.S, P = c.P, p = r.prev;
+
+  // ---------- 1. SCORECARD ----------
+  page('Scorecard', true);
+  font('bold', 20); ink(C.navy); doc.text('How the shop is doing', M, 36);
+  font('normal', 8.5); ink(C.muted); doc.text(`${pd(r.from)} to ${pd(r.to)}  (${c.days} day${c.days > 1 ? 's' : ''}). Compared with ${r.cmp.label}.`, M, 42);
+  const tw = (W - 2 * M - 8) / 3; let y = 49;
+  r.kpis.forEach((k, i) => { const x = M + (i % 3) * (tw + 4), yy = y + Math.floor(i / 3) * 31; tile(x, yy, tw, 27, k.label, 'UGX ' + (k.signed ? sg(k.cur) : n0(k.cur)), (tx, ty) => tag(tx, ty, k.cur, k.prev, k.pol, 'pct', r.cmp.short)); });
+  y += 70; y = h2('Health checks', y);
+  const stCol = { green: C.green, amber: C.amber, red: C.red, grey: C.grey }, stTxt = { green: 'HEALTHY', amber: 'WATCH', red: 'ACT NOW', grey: 'NO DATA' };
+  r.health.forEach(hh => { fill(C.white); draw(C.line); doc.roundedRect(M, y, W - 2 * M, 14, 2.5, 2.5, 'FD'); fill(stCol[hh.st]); doc.circle(M + 6, y + 7, 2, 'F');
+    font('bold', 9); ink(C.navy); doc.text(hh.name, M + 12, y + 6); font('bold', 7); ink(stCol[hh.st]); doc.text(stTxt[hh.st], W - M - 4, y + 6, { align: 'right' });
+    font('normal', 7.4); ink(C.muted); doc.text(doc.splitTextToSize(hh.text, W - 2 * M - 18)[0], M + 12, y + 11); y += 17; });
+  y += 4; y = h2('What needs your attention', y);
+  if(!r.attention.length){ font('normal', 8.5); ink(C.muted); doc.text('Nothing urgent. No red or amber findings for this period.', M, y + 3); y += 10; }
+  r.attention.forEach((a, i) => { const lines = doc.splitTextToSize(a.text, W - 2 * M - 16).slice(0, 2); const hh = 9 + lines.length * 3.6;
+    fill(C.white); draw(C.line); doc.roundedRect(M, y, W - 2 * M, hh, 2.5, 2.5, 'FD'); fill(a.sev === 'red' ? C.red : C.amber); doc.circle(M + 6, y + 6, 3, 'F');
+    font('bold', 8); ink(C.white); doc.text(String(i + 1), M + 6, y + 7.2, { align: 'center' }); font('bold', 8.6); ink(C.navy); doc.text(a.title, M + 12, y + 6);
+    font('normal', 7.4); ink(C.muted); lines.forEach((ln, j) => doc.text(ln, M + 12, y + 10.5 + j * 3.6)); y += hh + 3; });
+  if(r.coverageNote){ font('normal', 7); ink(C.amber); doc.text(r.coverageNote, M, 278); }
+
+  // ---------- 2. SALES AND PROFIT ----------
+  page('Sales and profit');
+  let yy = h2('Profit and loss', 34);
+  const plRows = [['Total sales', c.sales, p.sales, 1], ['Total cost', c.cost, p.cost, 0], ['Daily expenses', c.dailyExp, p.dailyExp, -1], ['Gross profit', c.gross, p.gross, 1], ['Monthly expenses (share of month)', c.monthly, p.monthly, -1], ['Net profit', c.net, p.net, 1]];
+  const chgTxt = (a, b) => b ? ((a - b) >= 0 ? '+' : '-') + Math.abs((a - b) / Math.abs(b) * 100).toFixed(1) + '%' : (a ? 'new' : '0%');
+  yy = table({ startY: yy, head: [['Metric', 'This period', 'Previous', 'Change']], body: plRows.map(([n, a, b]) => [n, n0(a), n0(b), chgTxt(a, b)]).concat([['Gross margin', pct1(c.grossM), pct1(p.grossM), c.grossM !== null && p.grossM !== null ? (c.grossM - p.grossM >= 0 ? '+' : '-') + Math.abs(c.grossM - p.grossM).toFixed(1) + ' pts' : '-'], ['Net margin', pct1(c.netM), pct1(p.netM), c.netM !== null && p.netM !== null ? (c.netM - p.netM >= 0 ? '+' : '-') + Math.abs(c.netM - p.netM).toFixed(1) + ' pts' : '-']]), columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } },
+    didParseCell: d => { if(d.section === 'body' && d.column.index === 3){ const t = String(d.cell.raw); const pol = [1, 0, -1, 1, -1, 1, 1, 1][d.row.index]; if(t.startsWith('+') || t.startsWith('-')){ const up = t.startsWith('+'); d.cell.styles.textColor = pol === 0 ? C.muted : (up === (pol > 0) ? C.green : C.red); } } } }) + 6;
+  // daily sales chart
+  yy = h2('Daily sales', yy);
+  const cx = M, cw = W - 2 * M, ch = 42; fill(C.white); draw(C.line); doc.roundedRect(cx, yy, cw, ch + 12, 2.5, 2.5, 'FD');
+  let series = c.dayList.map(d => ({ label: d.date, v: d.sales })), unit = 'day';
+  if(series.length > 62){ const wk = {}; c.dayList.forEach(d => { const dt = new Date(d.date + 'T00:00:00'); dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7)); const k = _ymd(dt); wk[k] = (wk[k] || 0) + d.sales; }); series = Object.keys(wk).sort().map(k => ({ label: k, v: wk[k] })); unit = 'week'; }
+  if(!series.length){ font('normal', 8); ink(C.muted); doc.text('No daily sales recorded in this period.', cx + 6, yy + 12); }
+  else { const mx = Math.max(...series.map(s => s.v), 1), bw = (cw - 14) / series.length, base = yy + ch + 2, avg = series.reduce((t, s) => t + s.v, 0) / series.length;
+    series.forEach((s, i) => { const hh = Math.max(0.4, s.v / mx * (ch - 6)); fill(s.v === mx ? C.green : [120, 190, 150]); doc.roundedRect(cx + 7 + i * bw + bw * 0.12, base - hh, Math.max(0.6, bw * 0.76), hh, 0.5, 0.5, 'F'); });
+    draw(C.amber); doc.setLineWidth(0.3); doc.setLineDashPattern([1.2, 1.2], 0); const ay = base - avg / mx * (ch - 6); doc.line(cx + 6, ay, cx + cw - 6, ay); doc.setLineDashPattern([], 0);
+    font('normal', 6.5); ink(C.muted); doc.text(unit === 'day' ? pd(series[0].label) : 'week of ' + pd(series[0].label), cx + 6, base + 5); doc.text(unit === 'day' ? pd(series[series.length - 1].label) : 'week of ' + pd(series[series.length - 1].label), cx + cw - 6, base + 5, { align: 'right' });
+    ink(C.amber); doc.text('Average ' + n0(avg) + ' per ' + unit, cx + cw / 2, base + 5, { align: 'center' }); ink(C.muted); doc.text('Highest ' + n0(mx), cx + cw - 6, yy + 5, { align: 'right' }); }
+  yy += ch + 18;
+  const yTop = yy;
+  const bw2 = r.best.map(d => ['Best: ' + pd(d.date), n0(d.sales)]).concat(r.worst.map(d => ['Lowest: ' + pd(d.date), n0(d.sales)]));
+  const yA = table({ startY: yTop, head: [['Best and lowest days', 'Sales']], body: bw2.length ? bw2 : [['Not enough days recorded', '']], columnStyles: { 1: { halign: 'right' } }, ...half(0) });
+  const yB = table({ startY: yTop, head: [['Day of week', 'Days', 'Avg sales']], body: r.dow.filter(d => d.n).map(d => [d.name, d.n, n0(d.avg)]), columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, ...half(1) });
+  yy = Math.max(yA, yB) + 6;
+  const yP = table({ startY: yy, head: [['Payment mix (from shifts)', 'Amount', 'Share']], body: r.mix.map(m => [m.name, n0(m.amount), m.pct.toFixed(1) + '%']), columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, ...half(0) });
+  fill(C.mint); draw(C.line); doc.roundedRect(W / 2 + 2, yy, W / 2 - M - 2, 38, 2.5, 2.5, 'FD'); font('bold', 8.5); ink(C.navy); doc.text('Break-even check', W / 2 + 6, yy + 7);
+  font('normal', 7.6); ink(C.muted); const be = r.breakEven ? `Monthly costs need about UGX ${n0(r.breakEven)} of sales in this period, which is UGX ${n0(r.bePerDay)} a day. ${r.daysAbove} of ${c.dayList.length} recorded days reached it.` : 'Not enough data to work out a break-even for this period.';
+  doc.text(doc.splitTextToSize(be, W / 2 - M - 12), W / 2 + 6, yy + 13);
+
+  // ---------- 3. CASH AND SHIFTS ----------
+  page('Cash and shifts');
+  const tw4 = (W - 2 * M - 12) / 4; yy = 34;
+  [['Shifts', String(S.count), S.closedCount + ' closed'], ['Shortages', 'UGX ' + n0(S.short), S.shortShifts + ' shift(s)'], ['Overages', 'UGX ' + n0(S.over), ''], ['Net difference', 'UGX ' + sg(S.net), '']].forEach(([l, v, sub], i) => tile(M + i * (tw4 + 4), yy, tw4, 22, l, v, sub ? (tx, ty) => { font('normal', 6.8); ink(C.muted); doc.text(sub, tx, ty - 0.5); } : null));
+  yy += 30; yy = h2('By cashier', yy);
+  yy = table({ startY: yy, head: [['Cashier', 'Shifts', 'Sales', 'Net difference', 'Shortages', 'Short shifts', 'Voids']], body: r.byCashier.map(x => [x.name, x.shifts, n0(x.sales), sg(x.net), n0(x.short), x.shortShifts, n0(x.voids)]), columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' } },
+    didParseCell: d => { if(d.section === 'body' && d.column.index === 3){ const v = parseFloat(String(d.cell.raw).replace(/[+,]/g, '')); if(v < -0.5) d.cell.styles.textColor = C.red; else if(v > 0.5) d.cell.styles.textColor = C.green; } } }) + 6;
+  yy = h2('By shift period', yy);
+  yy = table({ startY: yy, head: [['Period', 'Shifts', 'Sales', 'Net difference']], body: r.byPeriod.map(x => [periodLabel(x.period), x.shifts, n0(x.sales), sg(x.net)]), columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } } }) + 6;
+  yy = h2('Shift controls', yy);
+  yy = table({ startY: yy, head: [['Check', 'Count', 'What it means']], body: [['Closed by the system', S.auto, 'Never ended by the cashier, so figures are an old draft'], ['Re-opened by cashier', S.reopened, 'Cashier finished a shift after the system closed it'], ['Edited by a manager', S.edited, 'Details corrected afterwards, with a reason on record'], ['Added manually', S.manual, 'Shift was never logged and was added by a manager'], ['Voids and refunds (UGX)', n0(S.voids), 'Total taken off sales at the till']], columnStyles: { 1: { halign: 'right' } } });
+
+  // ---------- 4. PURCHASING AND SUPPLIERS ----------
+  page('Purchasing and suppliers');
+  yy = 34; [['Purchases', 'UGX ' + n0(P.total), P.count + ' entries'], ['Paid in cash', 'UGX ' + n0(P.cash), ''], ['On credit', 'UGX ' + n0(P.credit), ''], ['Owed to suppliers', 'UGX ' + n0(r.lNow.owed), 'at ' + pd(r.to)]].forEach(([l, v, sub], i) => tile(M + i * (tw4 + 4), yy, tw4, 22, l, v, sub ? (tx, ty) => { font('normal', 6.8); ink(C.muted); doc.text(sub, tx, ty - 0.5); } : null));
+  yy += 28; const variance = P.total - c.cost; font('normal', 8); ink(C.muted);
+  const vt = `Purchases against recorded cost: ${sg(variance)}. ${variance >= 0 ? 'More was bought than sold at cost, so stock is building up.' : 'More was sold at cost than bought, so stock is running down.'} Purchases paid from the till: UGX ${n0(S.tillPurch)}.`;
+  const vl = doc.splitTextToSize(vt, W - 2 * M); doc.text(vl, M, yy); yy += vl.length * 4 + 4;
+  yy = h2('Top suppliers by spend', yy);
+  yy = table({ startY: yy, head: [['Supplier', 'Entries', 'Total', 'On credit']], body: c.bySupplier.slice(0, 10).map(x => [x.name, x.count, n0(x.total), n0(x.credit)]), columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } } }) + 6;
+  yy = h2('Who is owed money', yy);
+  yy = table({ startY: yy, head: [['Supplier', 'Balance owed', 'Oldest credit', 'Last payment']], body: r.lNow.top.slice(0, 12).map(x => [x.name, n0(x.balance), x.oldestCredit || '-', x.lastPay || '-']), columnStyles: { 1: { halign: 'right' } } }) + 4;
+  font('normal', 7.4); ink(C.muted); doc.text(`Total owed UGX ${n0(r.lNow.owed)}${r.lNow.over > 0 ? `. Overpaid to suppliers: UGX ${n0(r.lNow.over)}.` : '.'}  Previous (${r.cmp.short}): UGX ${n0(r.lPrev.owed)}.`, M, yy);
+
+  // ---------- 5. EXPENSES, STOCK AND FINDINGS ----------
+  page('Expenses, stock and findings');
+  yy = h2('Where the money went', 34);
+  const typeRows = r.monthlyTypes.map(x => [x.key + ' (monthly share)', n0(x.total)]).concat(r.tillByType.map(x => [x.key + ' (till)', n0(x.total)]));
+  const yE1 = table({ startY: yy, head: [['Expenses by type', 'Amount']], body: typeRows.length ? typeRows : [['No expenses recorded', '']], columnStyles: { 1: { halign: 'right' } }, ...half(0) });
+  const yE2 = table({ startY: yy, head: [['Till expenses by cashier', 'Items', 'Amount']], body: r.tillByCashier.length ? r.tillByCashier.map(x => [x.key, x.count, n0(x.total)]) : [['None', '', '']], columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, ...half(1) });
+  yy = Math.max(yE1, yE2) + 6;
+  yy = h2('Stock and balance (latest Daily Balancing)', yy);
+  if(r.closure){ const cl = r.closure, sc = +(cl.stockCost ?? cl.stock) || 0; yy = table({ startY: yy, head: [['As at ' + pd(cl.date), 'UGX']], body: [['Stock at cost', n0(sc)], ['Stock at selling price', n0(+cl.stockPrice || 0)], ['Credit owed', n0(+cl.credit || 0)], ['Cash at hand', n0(+cl.cash || 0)], ['Net position (cash + stock at cost - credit)', n0((+cl.cash || 0) + sc - (+cl.credit || 0))]], columnStyles: { 1: { halign: 'right' } }, ...half(0) }); const yb = yy;
+    fill(C.paper); draw(C.line); doc.roundedRect(W / 2 + 2, yb - 40, W / 2 - M - 2, 36, 2.5, 2.5, 'FD'); font('normal', 7.4); ink(C.muted); doc.text(doc.splitTextToSize('Stock is recorded as totals at each balancing. Product-level stock counts are not tracked yet, so shrinkage cannot be traced to a product.', W / 2 - M - 12), W / 2 + 6, yb - 33); yy = yb + 6; }
+  else { font('normal', 8); ink(C.muted); doc.text('No Daily Balancing record on or before this date.', M, yy + 3); yy += 10; }
+  yy = h2('Audit findings', yy);
+  yy = table({ startY: yy, head: [['Level', 'Finding', 'Detail', 'Suggested action']], body: r.findings.length ? r.findings.slice(0, 14).map(f => [f.sev, f.title, f.detail.length > 230 ? f.detail.slice(0, 227) + '...' : f.detail, f.action]) : [['', 'No red or amber findings for this period', '', '']], columnStyles: { 0: { cellWidth: 14, fontStyle: 'bold' }, 1: { cellWidth: 38 }, 2: { cellWidth: 62 } },
+    didParseCell: d => { if(d.section === 'body' && d.column.index === 0){ d.cell.styles.textColor = d.cell.raw === 'Red' ? C.red : C.amber; } } }) + 6;
+  if(yy > 245){ doc.addPage(); band(); yy = 34; }
+  font('bold', 10); ink(C.navy); doc.text("Owner's notes", M, yy); draw(C.line); doc.setLineWidth(0.25);
+  for(let i = 0; i < 4; i++) doc.line(M, yy + 9 + i * 8, W - M, yy + 9 + i * 8);
+  // footers
+  const total = doc.getNumberOfPages();
+  for(let i = 1; i <= total; i++){ doc.setPage(i); draw(C.line); doc.setLineWidth(0.25); doc.line(M, 285, W - M, 285); font('normal', 7); ink(C.muted); doc.text(`Bright Mesh  |  Generated ${r.generated.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}  |  Shift figures use the latest 500 shifts`, M, 290); doc.text(`Page ${i} of ${total}`, W - M, 290, { align: 'right' }); }
+  return doc;
+}
+
 /* TEAM */
 function renderTeam(){
   const role = document.getElementById('teamUserRole')?.value || 'manager';
@@ -4038,6 +4453,7 @@ function switchTab(tab){
   if(tab === 'history') renderHistory();
   if(tab === 'shifts') renderShifts();
   if(tab === 'expenses') renderExpensesReport();
+  if(tab === 'owner') orInit();
   if(tab === 'daily'){ renderTable(); renderSummary(); renderTotals(); }
   if(tab === 'team') renderTeam();
 }
@@ -4718,12 +5134,13 @@ function setAuditRange(which){
   runAuditWithRange();
 }
 
-function runAuditWithRange(){
-  const fromStr = document.getElementById('auditFrom').value;
-  const toStr = document.getElementById('auditTo').value;
-  if(!fromStr || !toStr){ showToast('Pick both dates', 'error'); return; }
-  if(new Date(fromStr) > new Date(toStr)){ showToast('From date must be before To date', 'error'); return; }
-  const container = document.getElementById('auditReportContent');
+function runAuditWithRange(opts){
+  opts = opts || {};
+  const fromStr = opts.from || document.getElementById('auditFrom').value;
+  const toStr = opts.to || document.getElementById('auditTo').value;
+  if(!fromStr || !toStr){ if(!opts.silent) showToast('Pick both dates', 'error'); return; }
+  if(new Date(fromStr) > new Date(toStr)){ if(!opts.silent) showToast('From date must be before To date', 'error'); return; }
+  const container = opts.silent ? { innerHTML: '' } : document.getElementById('auditReportContent');
   const issues = { red:[], amber:[], green:[] };
   const fromDate = new Date(fromStr); const toDate = new Date(toStr);
 
@@ -5221,6 +5638,7 @@ function runAuditWithRange(){
   byC.forEach(r => { if(r.n >= 3 && totSales2 && totExp2 && r.sales && (r.exp / r.sales) > 2 * (totExp2 / totSales2)) issues.amber.push({title:'High expenses on ' + r.k + '\'s shifts', desc:`Expenses are ${fmtPct(r.exp / r.sales * 100)} of this cashier's sales, more than double the shop average (${fmtPct(totExp2 / totSales2 * 100)}).`}); });
   const extraHtml = compHtml + worstHtml + tbl('Cashier league table (worst first)', 'fa-user-clock', byC, 'Cashier') + tbl('Shift period comparison', 'fa-clock', byP, 'Period');
 
+  if(opts.silent) return issues;
   let verdictClass, verdictIcon, verdictTitle, verdictSub;
   if(allEntries.length === 0 && allClosures.length === 0){
     verdictClass='warn'; verdictIcon='fa-info-circle'; verdictTitle='No data in this range'; verdictSub='No daily entries or balancing records.';
