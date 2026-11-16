@@ -464,6 +464,14 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 .er-chip{background:#fff;border:1px solid #d2dfeb;border-radius:999px;padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:#0b2b44;}
 .er-chip:hover{background:#eef6ff;}
 .er-chip.active{background:#0b2b44;color:#fff;border-color:#0b2b44;}
+.cah{background:linear-gradient(135deg,#0b2b44,#0f4a55);color:#fff;border-radius:18px;padding:1.2rem 1.4rem;margin-bottom:1.2rem;}
+.cah .big{font-size:2rem;font-weight:800;letter-spacing:-0.02em;}
+.cah .lbl{font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#7fe0a8;}
+.cah table{width:100%;border-collapse:collapse;margin-top:0.9rem;font-size:0.82rem;}
+.cah td{padding:0.35rem 0;border-top:1px solid rgba(255,255,255,0.12);}
+.cah td:last-child{text-align:right;font-weight:600;}
+.cah .note{font-size:0.74rem;color:#f5d98a;margin-top:0.6rem;}
+.cah input[type=date]{padding:0.35rem 0.5rem;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;}
 .or-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:0.5rem;flex:0 0 auto;}
 .or-dot.green{background:#1d7a4b;}.or-dot.amber{background:#f5a623;}.or-dot.red{background:#e5484d;}.or-dot.grey{background:#9aabba;}
 .or-health{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.8rem;}
@@ -627,7 +635,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <div class="feature-card"><div class="feature-icon"><i class="fas fa-cash-register"></i></div><h3>Shift-based Daily Closure</h3><p>Cashiers start their shift, record sales, MOMO, itemised expenses, purchases paid from till and counted cash. Extra or loss is computed instantly.</p></div>
         <div class="feature-card"><div class="feature-icon"><i class="fas fa-clock"></i></div><h3>Morning / Afternoon / Evening</h3><p>Every shift is tagged with its period so you can track performance across the day.</p></div>
         <div class="feature-card"><div class="feature-icon"><i class="fas fa-user-shield"></i></div><h3>Role-Based Menus</h3><p>Cashiers only see what they need. Managers get full oversight. No clutter, no mistakes.</p></div>
-        <div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-halved"></i></div><h3>20+ Audit Checks</h3><p>Stock-cost flow vs purchases, stock-price margin, cash reconciliation, shift differences, and cross-checks against daily performance.</p></div>
+        <div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-alt"></i></div><h3>20+ Audit Checks</h3><p>Stock-cost flow vs purchases, stock-price margin, cash reconciliation, shift differences, and cross-checks against daily performance.</p></div>
         <div class="feature-card"><div class="feature-icon"><i class="fas fa-file-export"></i></div><h3>Excel &amp; PDF Export</h3><p>Download detailed reports with one click. Perfect for accountants, auditors, and tax season.</p></div>
         <div class="feature-card"><div class="feature-icon"><i class="fas fa-cloud"></i></div><h3>Cloud Sync</h3><p>Powered by Firebase. Every entry is synced in real-time across all devices — safe and backed up.</p></div>
       </div>
@@ -719,7 +727,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <div class="user-badge"><i class="fas fa-user-circle"></i> <span id="currentUserLabel">—</span> <span class="role" id="currentUserRole">—</span></div>
-        <div class="save-indicator saved" id="saveIndicator"><i class="fas fa-cloud-check"></i> <span id="saveStatus">Ready</span></div>
+        <div class="save-indicator saved" id="saveIndicator"><i class="fas fa-cloud"></i> <span id="saveStatus">Ready</span></div>
       </div>
       <div class="toolbar" style="margin-bottom:0;">
         <button class="btn btn-excel" onclick="downloadExcel()"><i class="fas fa-file-excel"></i> Excel</button>
@@ -746,6 +754,8 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <button class="tab-btn" data-tab="owner" data-perm="viewAudit" onclick="switchTab('owner')" role="menuitem"><i class="fas fa-file-lines"></i><span class="nav-item-text"><b>Owner Report</b><small>Full business overview, PDF and Excel</small></span></button>
         <button class="tab-btn" data-tab="shifts" data-perm="viewShifts" onclick="switchTab('shifts')" role="menuitem"><i class="fas fa-clock"></i><span class="nav-item-text"><b>Shifts History</b><small>Every cashier shift and its cash count</small></span></button>
         <button class="tab-btn" data-tab="expenses" data-perm="viewShifts" onclick="switchTab('expenses')" role="menuitem"><i class="fas fa-receipt"></i><span class="nav-item-text"><b>Expenses Report</b><small>What cashiers spent, by date</small></span></button>
+        <button class="tab-btn" data-tab="cashbook" data-perm="viewAudit" onclick="switchTab('cashbook')" role="menuitem"><i class="fas fa-book"></i><span class="nav-item-text"><b>Cash Book</b><small>How cash moves, day by day</small></span></button>
+        <button class="tab-btn" data-tab="payments" data-perm="viewAudit" onclick="switchTab('payments')" role="menuitem"><i class="fas fa-money-bill-wave"></i><span class="nav-item-text"><b>Payments Report</b><small>Every payment made, by date</small></span></button>
         <button class="tab-btn" data-tab="history" data-perm="viewHistory" onclick="switchTab('history')" role="menuitem"><i class="fas fa-clock-rotate-left"></i><span class="nav-item-text"><b>Month History</b><small>Closed months and past totals</small></span></button>
         <button class="tab-btn" data-tab="log" data-perm="viewLog" onclick="switchTab('log')" role="menuitem"><i class="fas fa-history"></i><span class="nav-item-text"><b>Audit Log</b><small>Who changed what, and when</small></span></button>
       </div>
@@ -800,7 +810,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
             <div class="shift-meta" id="closureShiftMeta"></div>
 
             <div class="closure-payments">
-              <h4><i class="fas fa-mobile-screen"></i> Mobile Money Payments Received</h4>
+              <h4><i class="fas fa-mobile-alt"></i> Mobile Money Payments Received</h4>
               <div class="pay-row">
                 <div class="closure-field" style="margin:0;">
                   <label><i class="fas fa-sim-card"></i> MTN MOMO</label>
@@ -819,9 +829,9 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
               <div class="hint">Enter the sales figure from your POS/system.</div>
             </div>
 
-            <div class="closure-payments"><h4><i class="fas fa-shield-halved"></i> Other Channels &amp; Controls</h4>
+            <div class="closure-payments"><h4><i class="fas fa-shield-alt"></i> Other Channels &amp; Controls</h4>
 <div class="pay-row">
-<div class="closure-field" style="margin:0;"><label><i class="fas fa-building-columns"></i> Bank / Card / POS payments</label><input type="number" step="0.01" id="clBank" placeholder="0" oninput="recalcClosure()"></div>
+<div class="closure-field" style="margin:0;"><label><i class="fas fa-university"></i> Bank / Card / POS payments</label><input type="number" step="0.01" id="clBank" placeholder="0" oninput="recalcClosure()"></div>
 <div class="closure-field" style="margin:0;"><label><i class="fas fa-book"></i> Credit sales (unpaid)</label><input type="number" step="0.01" id="clCreditSales" placeholder="0" oninput="recalcClosure()"></div></div>
 <div class="pay-row" style="margin-top:0.6rem;">
 <div class="closure-field" style="margin:0;"><label><i class="fas fa-hand-holding-dollar"></i> Credit repaid in cash</label><input type="number" step="0.01" id="clCreditRepay" placeholder="0" oninput="recalcClosure()"></div>
@@ -888,7 +898,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
       <label><i class="fas fa-calendar-alt"></i> Active month:</label>
       <select id="monthSelect" onchange="onMonthChange()"></select>
       <button class="btn btn-close-month editor-only" onclick="closeMonth()"><i class="fas fa-lock"></i> Close month</button>
-      <button class="btn btn-audit" onclick="openAuditReport()"><i class="fas fa-magnifying-glass-chart"></i> Audit Report</button>
+      <button class="btn btn-audit" onclick="openAuditReport()"><i class="fas fa-search-dollar"></i> Audit Report</button>
       <span id="closedStatus" style="font-size:0.8rem;color:#1d7a4b;font-weight:600;"></span>
       <div style="margin-left:auto;display:flex;gap:0.5rem;align-items:center;">
         <span style="font-size:0.75rem;color:#6a7f94;">Closed months:</span>
@@ -954,6 +964,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 
   <!-- DAILY BALANCING -->
   <div class="tab-panel" id="tab-audit">
+    <div id="cashAtHandCard"></div>
     <div class="month-bar">
       <label><i class="fas fa-calendar-alt"></i> Active month:</label>
       <select id="auditMonthSelect" onchange="onAuditMonthChange()"></select>
@@ -966,7 +977,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
         <div style="font-weight:700;color:#0b2b44;font-size:1rem;">Daily Balancing</div>
         <div style="font-size:0.8rem;color:#5f7385;">Day-to-day movement in stock cost, stock price, credit and cash. Stock cost is cross-checked against purchases to surface leakages.</div>
       </div>
-      <button class="btn btn-audit" style="margin-left:auto;" onclick="openAuditReport()"><i class="fas fa-magnifying-glass-chart"></i> Run full audit</button>
+      <button class="btn btn-audit" style="margin-left:auto;" onclick="openAuditReport()"><i class="fas fa-search-dollar"></i> Run full audit</button>
     </div>
     <div id="todayChecks"></div>
     <div class="audit-summary" id="auditSummary"></div>
@@ -1050,6 +1061,56 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   </div>
 
   <!-- MONTH HISTORY -->
+  <!-- CASH BOOK -->
+  <div class="tab-panel" id="tab-cashbook">
+    <div class="table-card" style="padding:1.1rem 1.2rem;">
+      <div class="er-filters">
+        <div><label>From</label><input type="date" id="cbFrom" onchange="cbCustom()"></div>
+        <div><label>To</label><input type="date" id="cbTo" onchange="cbCustom()"></div>
+      </div>
+      <div class="er-chips" id="cbChips">
+        <span class="er-chip" data-k="last7" onclick="cbSetRange('last7')">Last 7 days</span>
+        <span class="er-chip" data-k="last30" onclick="cbSetRange('last30')">Last 30 days</span>
+        <span class="er-chip" data-k="month" onclick="cbSetRange('month')">This month</span>
+        <span class="er-chip" data-k="lastmonth" onclick="cbSetRange('lastmonth')">Last month</span>
+        <span class="er-chip" data-k="last3" onclick="cbSetRange('last3')">Last 3 months</span>
+        <span class="er-chip" data-k="year" onclick="cbSetRange('year')">This year</span>
+        <span style="flex:1"></span>
+        <button class="btn editor-only" onclick="recordOtherPayment()"><i class="fas fa-plus-circle"></i> Record a payment</button>
+        <button class="btn" onclick="cbDownloadExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+      </div>
+    </div>
+    <div id="cbPreview" style="margin-top:1rem;"></div>
+  </div>
+
+  <!-- PAYMENTS REPORT -->
+  <div class="tab-panel" id="tab-payments">
+    <div class="table-card" style="padding:1.1rem 1.2rem;">
+      <div class="er-filters">
+        <div><label>From</label><input type="date" id="prFrom" onchange="prCustom()"></div>
+        <div><label>To</label><input type="date" id="prTo" onchange="prCustom()"></div>
+        <div><label>Type</label><select id="prCat" onchange="renderPaymentsReport()"></select></div>
+        <div><label>Paid by</label><select id="prMode" onchange="renderPaymentsReport()"><option value="">All</option><option value="Cash">Cash</option><option value="Mobile Money">Mobile Money</option><option value="Bank">Bank</option></select></div>
+        <div><label>Search</label><input type="text" id="prQ" placeholder="Supplier or note" oninput="renderPaymentsReport()"></div>
+      </div>
+      <div class="er-chips" id="prChips">
+        <span class="er-chip" data-k="today" onclick="prSetRange('today')">Today</span>
+        <span class="er-chip" data-k="yesterday" onclick="prSetRange('yesterday')">Yesterday</span>
+        <span class="er-chip" data-k="last7" onclick="prSetRange('last7')">Last 7 days</span>
+        <span class="er-chip" data-k="thisweek" onclick="prSetRange('thisweek')">This week</span>
+        <span class="er-chip" data-k="month" onclick="prSetRange('month')">This month</span>
+        <span class="er-chip" data-k="lastmonth" onclick="prSetRange('lastmonth')">Last month</span>
+        <span class="er-chip" data-k="last3" onclick="prSetRange('last3')">Last 3 months</span>
+        <span class="er-chip" data-k="year" onclick="prSetRange('year')">This year</span>
+        <span style="flex:1"></span>
+        <button class="btn editor-only" onclick="recordOtherPayment()"><i class="fas fa-plus-circle"></i> Record a payment</button>
+        <button class="btn" onclick="prDownloadExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+        <button class="btn btn-primary" onclick="prDownloadPdf()"><i class="fas fa-file-pdf"></i> PDF</button>
+      </div>
+    </div>
+    <div id="prPreview" style="margin-top:1rem;"></div>
+  </div>
+
   <!-- OWNER REPORT -->
   <div class="tab-panel" id="tab-owner">
     <div class="table-card" style="padding:1.1rem 1.2rem;">
@@ -1168,7 +1229,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
     <div class="summary-grid" id="ledgerSummary"></div>
     <div class="admin-grid">
       <div class="admin-card editor-only">
-        <h3><i class="fas fa-money-bill-transfer"></i> Record Payment to Supplier</h3>
+        <h3><i class="fas fa-money-bill-wave"></i> Record Payment to Supplier</h3>
         <div class="form-row"><label>Supplier</label><select id="payName"></select></div>
         <div class="form-row"><label>Date</label><input type="date" id="payDate"></div>
         <div class="form-row"><label>Amount (UGX)</label><input type="number" id="payAmt" placeholder="0"></div>
@@ -1228,7 +1289,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
   <div class="footer-note">
     <span><i class="fas fa-database"></i> Bright Mesh</span>
     <span><i class="fas fa-cloud"></i> Synced to Firebase Firestore</span>
-    <span><i class="fas fa-shield-halved"></i> Role-based access control</span>
+    <span><i class="fas fa-shield-alt"></i> Role-based access control</span>
   </div>
 </div>
 
@@ -1236,7 +1297,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 <div class="app" id="adminApp" style="display:none;">
   <div class="app-header">
     <div>
-      <h1><i class="fas fa-shield-halved"></i> Bright Mesh Admin</h1>
+      <h1><i class="fas fa-shield-alt"></i> Bright Mesh Admin</h1>
       <div class="sub">
         <span><i class="fas fa-users-gear"></i> Manage accounts, locations, and permissions</span>
         <span><i class="fas fa-chart-line"></i> Monitor performance across all branches</span>
@@ -1245,7 +1306,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <div class="user-badge"><i class="fas fa-user-shield"></i> <span>Administrator</span> <span class="role admin">ADMIN</span></div>
-        <div class="save-indicator saved" id="adminSaveIndicator"><i class="fas fa-cloud-check"></i> <span id="adminSaveStatus">Ready</span></div>
+        <div class="save-indicator saved" id="adminSaveIndicator"><i class="fas fa-cloud"></i> <span id="adminSaveStatus">Ready</span></div>
       </div>
       <div class="toolbar" style="margin-bottom:0;">
         <button class="btn" onclick="openAdminChangePassword()"><i class="fas fa-key"></i> Change Admin Password</button>
@@ -1316,7 +1377,7 @@ input[readonly]{background:#f2f6fa;color:#2a4a6a;font-weight:500;}
 <div class="modal-overlay" id="auditModal">
   <div class="modal">
     <div class="modal-header">
-      <div><h2><i class="fas fa-magnifying-glass-chart"></i> Audit Report — <span id="auditReportMonth"></span></h2><div class="sub" id="auditReportDate"></div></div>
+      <div><h2><i class="fas fa-search-dollar"></i> Audit Report — <span id="auditReportMonth"></span></h2><div class="sub" id="auditReportDate"></div></div>
       <button class="modal-close" onclick="closeAuditReport()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
@@ -1485,7 +1546,7 @@ try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); firebas
 /* CONSTANTS */
 const EXPENSE_TYPES = ['Salary','Rent','Utilities (Electricity/Water)','Transport','Fuel','Packaging Materials','Cleaning Supplies','Security Services','Wifi / Internet','Telephone / Airtime','Waste Disposal','Licenses & Permits','Insurance','Marketing & Advertising','Repairs & Maintenance','Bank Charges','Loan Repayment','Taxes','Staff Welfare','Loss / Theft','Other'];
 const CLOSURE_EXPENSE_TYPES = ['Transport','Fuel','Packaging','Cleaning','Airtime','Waste','Repairs','Staff Welfare','Security','Electricity','Water','Other'];
-const LOCATION_SUBCOLLECTIONS = ['months','entries','purchases','weeklyClosures','auditLog','shifts','suppliers','supplierPayments','monthHistory'];
+const LOCATION_SUBCOLLECTIONS = ['months','entries','purchases','weeklyClosures','auditLog','shifts','suppliers','supplierPayments','otherPayments','monthHistory'];
 
 const PERIOD_DEFS = {
   morning:   { label: 'Morning',   icon: 'fa-sun',       start: 0,  end: 12 },
@@ -1607,7 +1668,7 @@ function hasPerm(perm){
   return !!merged[perm];
 }
 function applyTabPermissions(){
-  const permMap = { closure: 'editShifts', purchases: 'viewPurchases', daily: 'viewDaily', audit: 'viewAudit', shifts: 'viewShifts', expenses: 'viewShifts', owner: 'viewAudit', history: 'viewHistory', log: 'viewLog', suppliers: 'viewSuppliers', team: 'manageUsers' };
+  const permMap = { closure: 'editShifts', purchases: 'viewPurchases', daily: 'viewDaily', audit: 'viewAudit', shifts: 'viewShifts', expenses: 'viewShifts', owner: 'viewAudit', payments: 'viewAudit', cashbook: 'viewAudit', history: 'viewHistory', log: 'viewLog', suppliers: 'viewSuppliers', team: 'manageUsers' };
   document.querySelectorAll('#userTabNav .tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     const perm = permMap[tab];
@@ -1668,7 +1729,7 @@ function showSaveStatus(status, msg, target){
   if(!el||!txt) return;
   el.classList.remove('saving','saved','error');
   if(status==='saving'){ el.classList.add('saving'); el.querySelector('i').className='fas fa-spinner fa-spin'; txt.textContent='Saving...'; }
-  else if(status==='saved'){ el.classList.add('saved'); el.querySelector('i').className='fas fa-cloud-check'; const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); txt.textContent = msg || `Saved ${t}`; }
+  else if(status==='saved'){ el.classList.add('saved'); el.querySelector('i').className='fas fa-cloud'; const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); txt.textContent = msg || `Saved ${t}`; }
   else { el.classList.add('error'); el.querySelector('i').className='fas fa-exclamation-triangle'; txt.textContent = msg || 'Save failed'; }
 }
 
@@ -1978,6 +2039,8 @@ async function loadLocationData(locationId) {
     suppliersCache.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
     const spSnap = await db.collection('locations').doc(locationId).collection('supplierPayments').get();
     supplierPayments = []; spSnap.forEach(doc => supplierPayments.push({ id: doc.id, ...doc.data() }));
+    otherPayments = [];
+    try { const opSnap = await db.collection('locations').doc(locationId).collection('otherPayments').get(); opSnap.forEach(doc => otherPayments.push({ id: doc.id, ...doc.data() })); } catch(e) { console.warn('Could not load other payments', e); }
     const shSnap = await db.collection('locations').doc(locationId).collection('shifts').orderBy('date','desc').limit(500).get();
     allShifts = []; shSnap.forEach(doc => allShifts.push({ id: doc.id, ...doc.data() }));
     try { syncLinkedExpenses(); } catch(e) { console.warn(e); }
@@ -2190,7 +2253,7 @@ function doLogout(){
   if(!confirm('Sign out?')) return;
   clearSession();
   currentUser = null; currentLocationId = null;
-  allMonthsData = {}; weeklyClosures = []; auditLog = []; suppliersCache = []; allShifts = []; currentMonthHistory = [];
+  allMonthsData = {}; weeklyClosures = []; auditLog = []; suppliersCache = []; allShifts = []; otherPayments = []; currentMonthHistory = [];
   currentShiftId = null; currentShiftData = null;
   document.getElementById('landingPage').style.display = 'block';
   document.getElementById('app').style.display = 'none';
@@ -3535,6 +3598,7 @@ function buildLedger(upTo){
   return L;
 }
 function renderSupplierLedger(){
+  try { renderCashAtHand(); } catch(e) {}
   const body = document.getElementById('ledgerBody'); if(!body) return;
   const registered = new Set(registeredSupplierNames());
   const rows = Object.values(buildLedger()).filter(r => registered.has(r.name) || Math.abs(r.balance) > 0.5).sort((a,b) => b.balance - a.balance);
@@ -3899,6 +3963,7 @@ function orRangeFor(key){
   if(key === 'today') return [today, today];
   if(key === 'yesterday'){ const y = orAddDays(today, -1); return [y, y]; }
   if(key === 'last7') return [orAddDays(today, -6), today];
+  if(key === 'last30') return [orAddDays(today, -29), today];
   if(key === 'thisweek'){ const dow = (t.getDay() + 6) % 7; return [orAddDays(today, -dow), today]; }
   if(key === 'lastmonth') return [_ymd(new Date(t.getFullYear(), t.getMonth() - 1, 1)), _ymd(new Date(t.getFullYear(), t.getMonth(), 0))];
   if(key === 'last3') return [_ymd(new Date(t.getFullYear(), t.getMonth() - 2, 1)), today];
@@ -4267,6 +4332,272 @@ function orBuildPdf(r){
   return doc;
 }
 
+/* ===================== CASH AT HAND + PAYMENTS REPORT ===================== */
+let otherPayments = [], cashAsOf = '', prRangeKey = 'month', prLast = null;
+const OTHER_PAY_TYPES = ['Salary', 'Rent', 'Utilities', 'Transport', 'Owner withdrawal', 'Banked', 'Other'];
+function cashAtHand(asOf){
+  const num = v => parseFloat(v) || 0;
+  const anchor = weeklyClosures.filter(c => c.date && c.date <= asOf).sort((a, b) => a.date.localeCompare(b.date)).pop() || null;
+  const A = anchor ? anchor.date : '';
+  const inR = d => d && d > A && d <= asOf;
+  let shiftCash = 0, shiftCount = 0, autoUsed = 0, openCount = 0, tillPurch = 0;
+  allShifts.forEach(sh => {
+    if(!inR(sh.date)) return;
+    if(sh.status !== 'closed'){ openCount++; return; }
+    const fl = num(sh.openingFloat);
+    if(sh.closedBy === 'auto' && !sh.reopenedByCashier){ shiftCash += num(sh.cashExpected) - fl; autoUsed++; } else shiftCash += num(sh.counted) - fl;
+    shiftCount++; tillPurch += num(sh.purchasesPaid);
+  });
+  const supplierCash = supplierPayments.filter(x => inR(x.date) && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
+  let cashPurchAll = 0; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => { if(inR(pu.date) && (pu.payment || '').toLowerCase() === 'cash') cashPurchAll += num(pu.total); }));
+  const cashPurch = cashPurchAll - tillPurch;   // purchases paid from the till are already inside the shift cash counts
+  const otherCash = otherPayments.filter(x => inR(x.date) && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
+  const base = anchor ? num(anchor.cash) : 0;
+  const staleDays = anchor ? Math.round((new Date(asOf + 'T00:00:00') - new Date(A + 'T00:00:00')) / 86400000) : null;
+  return { asOf, anchor, A, base, shiftCash, shiftCount, autoUsed, openCount, supplierCash, cashPurch, tillPurch, otherCash, total: base + shiftCash - supplierCash - cashPurch - otherCash, staleDays };
+}
+function setCashAsOf(v){ cashAsOf = v || ''; renderCashAtHand(); }
+function renderCashAtHand(){
+  const box = document.getElementById('cashAtHandCard'); if(!box) return;
+  if(!hasPerm('viewAudit')){ box.innerHTML = ''; return; }
+  const today = _ymd(new Date()), asOf = cashAsOf || today, c = cashAtHand(asOf);
+  const pd = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const row = (sign, label, v, sub) => `<tr><td>${sign} ${label}${sub ? ` <span style="opacity:0.6;font-size:0.72rem;">${sub}</span>` : ''}</td><td>${sign === '&minus;' && v ? '&minus; ' : ''}${fmt(v)}</td></tr>`;
+  const notes = [];
+  if(!c.anchor) notes.push('No Daily Balancing cash count found, so this is only the cash movement recorded so far. Add a Daily Balancing record to anchor it.');
+  else if(c.staleDays > 14) notes.push(`The last cash count is ${c.staleDays} days old. Record a Daily Balancing to refresh it.`);
+  if(c.autoUsed) notes.push(`${c.autoUsed} shift(s) were closed by the system, so their expected cash is used instead of a count.`);
+  if(c.openCount) notes.push(`${c.openCount} shift(s) are still open and are not included yet.`);
+  box.innerHTML = `<div class="cah">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.8rem;">
+      <div><div class="lbl">Cash at hand ${asOf === today ? 'today' : 'on ' + pd(asOf)}</div><div class="big">UGX ${fmt(c.total)}</div>
+      <div style="font-size:0.78rem;opacity:0.8;">${c.anchor ? (c.A === asOf ? `Cash was counted on this date. Shifts and payments recorded after it are added here.` : `Cash counted on ${pd(c.A)}, plus everything recorded after it`) : 'Cash movement recorded so far'}</div></div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;"><label style="font-size:0.72rem;opacity:0.8;">As of</label><input type="date" value="${asOf}" max="${today}" onchange="setCashAsOf(this.value)">
+        ${asOf !== today ? `<button class="btn" style="padding:0.35rem 0.7rem;" onclick="setCashAsOf('')">Today</button>` : ''}
+        <button class="btn" style="padding:0.35rem 0.7rem;" onclick="switchTab('cashbook')"><i class="fas fa-book"></i> Cash book</button>
+        <button class="btn" style="padding:0.35rem 0.7rem;" onclick="switchTab('payments')"><i class="fas fa-list"></i> Payments</button></div>
+    </div>
+    <table><tbody>
+      ${row('', 'Cash counted at last balancing', c.base, c.anchor ? pd(c.A) : '')}
+      ${row('+', 'Cash collected in shifts', c.shiftCash, c.shiftCount + ' shift(s), after till expenses and purchases')}
+      ${row('&minus;', 'Supplier payments in cash', c.supplierCash)}
+      ${row('&minus;', 'Purchases paid in cash', c.cashPurch, c.tillPurch ? 'not counting UGX ' + fmt(c.tillPurch) + ' paid from the till' : '')}
+      ${row('&minus;', 'Other cash payments (salary, rent, banking)', c.otherCash)}
+    </tbody></table>
+    ${notes.map(n => `<div class="note"><i class="fas fa-triangle-exclamation"></i> ${esc(n)}</div>`).join('')}
+  </div>`;
+}
+async function recordOtherPayment(){
+  if(!(hasPerm('viewAudit') && (hasPerm('editExpenses') || hasPerm('manageUsers')))){ showToast('No permission', 'error'); return; }
+  const v = await askForm({
+    title: 'Record a payment', icon: 'fa-money-bill-wave', submitLabel: 'Save payment',
+    note: 'Use this for money that left the business and is not a supplier payment or a till expense, such as salaries, rent or cash taken to the bank. Supplier payments are recorded in Suppliers.',
+    fields: [
+      { name: 'date', label: 'Date', type: 'date', value: _ymd(new Date()), half: true, required: true },
+      { name: 'type', label: 'Type', type: 'select', value: 'Salary', half: true, options: OTHER_PAY_TYPES.map(t => ({ value: t, label: t })) },
+      { name: 'payee', label: 'Paid to (optional)', value: '', half: true },
+      { name: 'amount', label: 'Amount (UGX)', type: 'number', value: '', half: true, required: true },
+      { name: 'mode', label: 'Paid by', type: 'select', value: 'Cash', options: [{ value: 'Cash', label: 'Cash (reduces cash at hand)' }, { value: 'Mobile Money', label: 'Mobile Money' }, { value: 'Bank', label: 'Bank' }] },
+      { name: 'note', label: 'Note (optional)', value: '' }
+    ],
+    validate: f => !(parseFloat(f.amount) > 0) ? 'Enter an amount above zero' : ''
+  });
+  if(!v) return;
+  const rec = { date: v.date, type: v.type, payee: v.payee.trim(), amount: parseFloat(v.amount), mode: v.mode, note: v.note.trim(), by: currentUser.username, at: new Date().toISOString() };
+  try {
+    if(firebaseReady && currentLocationId){ const ref = await db.collection('locations').doc(currentLocationId).collection('otherPayments').add(rec); rec.id = ref.id; } else rec.id = 'local_' + Date.now();
+    otherPayments.push(rec);
+    addLog('Record Payment', `${rec.type}${rec.payee ? ' to ' + rec.payee : ''}: UGX ${fmt(rec.amount)} by ${rec.mode} on ${rec.date}${rec.note ? ' (' + rec.note + ')' : ''}`);
+    showToast('Payment recorded', 'success');
+    try { renderCashAtHand(); } catch(e) {} renderPaymentsReport();
+  } catch(e) { showToast('Could not save: ' + e.message, 'error'); }
+}
+async function deleteOtherPayment(id){
+  if(!hasPerm('manageUsers') && !hasPerm('manageShiftClosures')){ showToast('Only a manager can delete payments', 'error'); return; }
+  const x = otherPayments.find(q => q.id === id); if(!x || !confirm(`Delete this ${x.type} payment of UGX ${fmt(x.amount)} dated ${x.date}?`)) return;
+  try {
+    if(firebaseReady && currentLocationId && !String(id).startsWith('local_')) await db.collection('locations').doc(currentLocationId).collection('otherPayments').doc(id).delete();
+    otherPayments = otherPayments.filter(q => q.id !== id);
+    addLog('Delete Payment', `${x.type}${x.payee ? ' to ' + x.payee : ''}: UGX ${fmt(x.amount)} (${x.mode}) dated ${x.date} deleted by ${currentUser.username}`);
+    try { renderCashAtHand(); } catch(e) {} renderPaymentsReport();
+  } catch(e) { showToast('Could not delete: ' + e.message, 'error'); }
+}
+function prMarkChips(){ document.querySelectorAll('#prChips .er-chip').forEach(c => c.classList.toggle('active', c.dataset.k === prRangeKey)); }
+function prInit(){
+  const f = document.getElementById('prFrom'); if(!f) return;
+  if(!f.value){ const [a, b] = orRangeFor(prRangeKey === 'custom' ? 'month' : prRangeKey); f.value = a; document.getElementById('prTo').value = b; }
+  prMarkChips(); renderPaymentsReport();
+}
+function prSetRange(k){ const [a, b] = orRangeFor(k); document.getElementById('prFrom').value = a; document.getElementById('prTo').value = b; prRangeKey = k; prMarkChips(); renderPaymentsReport(); }
+function prCustom(){ prRangeKey = 'custom'; prMarkChips(); renderPaymentsReport(); }
+/* Every payment recorded anywhere in the app, in one list. */
+function paymentsInRange(from, to){
+  const inR = d => d && d >= from && d <= to, num = v => parseFloat(v) || 0, rows = [];
+  supplierPayments.forEach(x => { if(inR(x.date)) rows.push({ date: x.date, cat: 'Supplier payment', payee: x.supplier || '', mode: x.mode || 'Cash', ref: x.reference || '', by: x.by || '', amount: num(x.amount) }); });
+  Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => {
+    const k = (pu.payment || '').toLowerCase(); if(!inR(pu.date) || !k || k === 'credit') return;
+    rows.push({ date: pu.date, cat: 'Purchase paid on delivery', payee: pu.supplier || '', mode: k === 'cash' ? 'Cash' : (k.includes('mobile') ? 'Mobile Money' : (k.includes('bank') ? 'Bank' : pu.payment)), ref: pu.reference || '', by: '', amount: num(pu.total) });
+  }));
+  cashierExpenseItems(from, to).forEach(i => rows.push({ date: i.date, cat: 'Expense paid from till', payee: i.type + (i.description ? ': ' + i.description : ''), mode: 'Cash', ref: periodLabel(i.period) + ' shift', by: i.cashierName, amount: i.amount }));
+  otherPayments.forEach(x => { if(inR(x.date)) rows.push({ date: x.date, cat: x.type || 'Other', payee: x.payee || '', mode: x.mode || 'Cash', ref: x.note || '', by: x.by || '', amount: num(x.amount), otherId: x.id }); });
+  weeklyClosures.forEach(c => { if(inR(c.date) && num(c.out) > 0) rows.push({ date: c.date, cat: 'Cash banked / taken out', payee: 'Daily Balancing record', mode: 'Cash', ref: '', by: '', amount: num(c.out) }); });
+  return rows.sort((a, b) => b.date.localeCompare(a.date) || a.cat.localeCompare(b.cat));
+}
+function prCompute(){
+  const g = id => (document.getElementById(id) || {}).value || '';
+  let from = g('prFrom'), to = g('prTo'); if(!from || !to) return null;
+  if(from > to){ const t = from; from = to; to = t; document.getElementById('prFrom').value = from; document.getElementById('prTo').value = to; }
+  const all = paymentsInRange(from, to), cat = g('prCat'), mode = g('prMode'), q = g('prQ').trim().toLowerCase();
+  const rows = all.filter(r => (!cat || r.cat === cat) && (!mode || r.mode === mode) && (!q || (r.payee + ' ' + r.ref + ' ' + r.cat + ' ' + r.by).toLowerCase().includes(q)));
+  const group = keyFn => { const m = {}; rows.forEach(r => { const k = keyFn(r); (m[k] = m[k] || { key: k, count: 0, total: 0 }); m[k].count++; m[k].total += r.amount; }); return Object.values(m).sort((a, b) => b.total - a.total); };
+  const total = rows.reduce((a, r) => a + r.amount, 0), cash = rows.filter(r => r.mode === 'Cash').reduce((a, r) => a + r.amount, 0);
+  return { from, to, all, rows, total, cash, nonCash: total - cash, byCat: group(r => r.cat), byMode: group(r => r.mode), cats: [...new Set(all.map(r => r.cat))].sort() };
+}
+function renderPaymentsReport(){
+  const box = document.getElementById('prPreview'); if(!box) return;
+  const r = prLast = prCompute(); if(!r){ box.innerHTML = ''; return; }
+  const catSel = document.getElementById('prCat'), want = ['', ...new Set([...OTHER_PAY_TYPES, 'Supplier payment', 'Purchase paid on delivery', 'Expense paid from till', 'Cash banked / taken out'])];
+  if(catSel.dataset.built !== '1'){ catSel.innerHTML = '<option value="">All types</option>' + want.slice(1).map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join(''); catSel.dataset.built = '1'; }
+  const todayCash = cashAtHand(_ymd(new Date()));
+  const pd = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  const canDel = hasPerm('manageUsers') || hasPerm('manageShiftClosures');
+  let h = `<div class="summary-grid">
+    <div class="sum-card flag-amber"><div class="sum-label"><i class="fas fa-money-bill-wave"></i> Total paid out</div><div class="sum-value">${fmt(r.total)}</div><div class="sum-sub">${r.rows.length} payment(s)</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-coins"></i> In cash</div><div class="sum-value">${fmt(r.cash)}</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-mobile-alt"></i> Mobile money and bank</div><div class="sum-value">${fmt(r.nonCash)}</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-wallet"></i> Cash at hand today</div><div class="sum-value">${fmt(todayCash.total)}</div><div class="sum-sub"><a style="cursor:pointer;color:#0b5a8a;font-weight:700;" onclick="switchTab('audit')">See how it is worked out</a></div></div></div>`;
+  const tbl = (head, rowsH) => `<div class="table-card"><div class="table-scroll"><table><thead><tr>${head.map((x, i) => `<th${i > 0 ? ' style="text-align:right;"' : ''}>${x}</th>`).join('')}</tr></thead><tbody>${rowsH || `<tr><td colspan="${head.length}" style="text-align:center;padding:1rem;color:#7b8fa0;">Nothing in this period.</td></tr>`}</tbody></table></div></div>`;
+  h += '<div class="er-two" style="margin-top:1.2rem;"><div><div class="section-title"><i class="fas fa-tags"></i> By type</div>' + tbl(['Type', 'Payments', 'Total'], r.byCat.map(g => `<tr><td>${esc(g.key)}</td><td style="text-align:right;">${g.count}</td><td style="text-align:right;font-weight:600;">${fmt(g.total)}</td></tr>`).join('')) +
+    '</div><div><div class="section-title"><i class="fas fa-credit-card"></i> By how it was paid</div>' + tbl(['Paid by', 'Payments', 'Total'], r.byMode.map(g => `<tr><td>${esc(g.key)}</td><td style="text-align:right;">${g.count}</td><td style="text-align:right;font-weight:600;">${fmt(g.total)}</td></tr>`).join('')) + '</div></div>';
+  h += '<div class="section-title" style="margin-top:1.4rem;"><i class="fas fa-list"></i> All payments</div><div class="table-card"><div class="table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Paid to / for</th><th>Paid by</th><th>Reference / note</th><th>Recorded by</th><th style="text-align:right;">Amount (UGX)</th><th></th></tr></thead><tbody>' +
+    (r.rows.length ? r.rows.map(x => `<tr><td>${pd(x.date)}</td><td>${esc(x.cat)}</td><td>${esc(x.payee) || '—'}</td><td>${esc(x.mode)}</td><td>${esc(x.ref) || '—'}</td><td>${esc(x.by) || '—'}</td><td style="text-align:right;font-weight:600;">${fmt(x.amount)}</td><td>${x.otherId && canDel ? `<button class="remove-btn" title="Delete" onclick="deleteOtherPayment('${x.otherId}')"><i class="fas fa-trash-alt"></i></button>` : ''}</td></tr>`).join('') : '<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:#7b8fa0;">No payments recorded in this period.</td></tr>') +
+    '</tbody></table></div><div style="padding:0.8rem 1.2rem;border-top:1px solid #eef3f8;text-align:right;font-size:0.9rem;"><strong>Total:</strong> <span style="font-weight:700;color:#b33a3a;">UGX ' + fmt(r.total) + '</span></div></div>';
+  h += '<div style="font-size:0.75rem;color:#7b8fa0;margin-top:0.8rem;">Includes supplier payments, purchases paid on delivery, expenses cashiers paid from the till, cash banked or taken out at Daily Balancing, and payments recorded here. Credit purchases appear only when they are paid. Monthly expenses (rent, salaries) are not dated, so record the actual payment here if you want it to show.</div>';
+  box.innerHTML = h;
+}
+function prStem(r){ return `Payments_${r.from}_to_${r.to}`; }
+function prDownloadExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('Excel library not loaded', 'error'); return; }
+  renderPaymentsReport(); const r = prLast; if(!r) return;
+  const wb = XLSX.utils.book_new(), add = (n, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ Note: 'Nothing in this period' }]), n);
+  add('Payments', r.rows.map(x => ({ Date: x.date, Type: x.cat, 'Paid to / for': x.payee, 'Paid by': x.mode, 'Reference / note': x.ref, 'Recorded by': x.by, 'Amount (UGX)': x.amount })));
+  add('By type', r.byCat.map(g => ({ Type: g.key, Payments: g.count, 'Total (UGX)': g.total })));
+  add('By how paid', r.byMode.map(g => ({ 'Paid by': g.key, Payments: g.count, 'Total (UGX)': g.total })));
+  XLSX.writeFile(wb, prStem(r) + '.xlsx');
+}
+function prDownloadPdf(){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ showToast('PDF library not loaded', 'error'); return; }
+  renderPaymentsReport(); const r = prLast; if(!r) return;
+  try { const doc = prBuildPdf(r); doc.save(prStem(r) + '.pdf'); showToast('Payments report downloaded', 'success'); }
+  catch(e) { console.error(e); showToast('Could not build the PDF: ' + e.message, 'error'); }
+}
+function prBuildPdf(r){
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const _tx = doc.text.bind(doc); doc.text = (t, ...a) => _tx(Array.isArray(t) ? t.map(orAscii) : orAscii(t), ...a);
+  const W = 210, M = 14, NAVY = [11, 43, 68], INK = [20, 40, 59], MUTED = [95, 115, 133], LINE = [227, 235, 243], PAPER = [246, 249, 252], WHITE = [255, 255, 255];
+  const n0 = v => (Math.round(v) < 0 ? '-' : '') + Math.abs(Math.round(v)).toLocaleString('en-US');
+  const pd = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const loc = (currentUser && (currentUser.locationName || currentLocationId)) || '', bands = new Set();
+  const band = () => { const pg = doc.internal.getCurrentPageInfo().pageNumber; if(bands.has(pg)) return; bands.add(pg);
+    doc.setFillColor(...NAVY); doc.rect(0, 0, W, 22, 'F'); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...WHITE); doc.text('Payments Report', M, 11.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(190, 205, 218); doc.text(`${loc}  |  ${pd(r.from)} to ${pd(r.to)}`, M, 16.5); };
+  band();
+  const tw = (W - 2 * M - 12) / 4, tiles = [['Total paid out', 'UGX ' + n0(r.total), r.rows.length + ' payments'], ['In cash', 'UGX ' + n0(r.cash), ''], ['Mobile money and bank', 'UGX ' + n0(r.nonCash), ''], ['Cash at hand today', 'UGX ' + n0(cashAtHand(_ymd(new Date())).total), '']];
+  tiles.forEach(([l, v, sub], i) => { const x = M + i * (tw + 4); doc.setFillColor(...WHITE); doc.setDrawColor(...LINE); doc.roundedRect(x, 30, tw, 22, 2.5, 2.5, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.3); doc.setTextColor(...MUTED); doc.text(l.toUpperCase(), x + 4, 36); doc.setFontSize(11); doc.setTextColor(...NAVY); doc.text(v, x + 4, 43.5);
+    if(sub){ doc.setFont('helvetica', 'normal'); doc.setFontSize(6.8); doc.setTextColor(...MUTED); doc.text(sub, x + 4, 49); } });
+  const at = (opts) => doc.autoTable({ theme: 'plain', styles: { fontSize: 7.6, cellPadding: 1.9, textColor: INK, lineColor: LINE, lineWidth: 0.1, overflow: 'linebreak' }, headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 7.2 }, alternateRowStyles: { fillColor: PAPER }, rowPageBreak: 'avoid', margin: { left: M, right: M, top: 28, bottom: 18 }, ...opts, didDrawPage: () => band(), didParseCell: d => { if(d.cell && Array.isArray(d.cell.text)) d.cell.text = d.cell.text.map(orAscii); } });
+  const half = side => ({ margin: { left: side === 0 ? M : W / 2 + 2, right: side === 0 ? W / 2 + 2 : M, top: 28, bottom: 18 } });
+  at({ startY: 58, head: [['By type', 'Payments', 'Total']], body: r.byCat.length ? r.byCat.map(g => [g.key, g.count, n0(g.total)]) : [['Nothing in this period', '', '']], columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, ...half(0) }); const y1 = doc.lastAutoTable.finalY;
+  at({ startY: 58, head: [['Paid by', 'Payments', 'Total']], body: r.byMode.length ? r.byMode.map(g => [g.key, g.count, n0(g.total)]) : [['Nothing in this period', '', '']], columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, ...half(1) });
+  const y2 = Math.max(y1, doc.lastAutoTable.finalY) + 8;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...NAVY); doc.text('All payments', M, y2);
+  at({ startY: y2 + 3, head: [['Date', 'Type', 'Paid to / for', 'Paid by', 'Note', 'Amount']], body: r.rows.length ? r.rows.map(x => [pd(x.date), x.cat, x.payee, x.mode, x.ref, n0(x.amount)]) : [['', 'No payments recorded in this period', '', '', '', '']], columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 36 }, 3: { cellWidth: 22 }, 5: { halign: 'right', cellWidth: 24, fontStyle: 'bold' } },
+    foot: [['', '', '', '', 'Total', n0(r.total)]], footStyles: { fillColor: PAPER, textColor: NAVY, fontStyle: 'bold' }, showFoot: 'lastPage' });
+  const total = doc.getNumberOfPages();
+  for(let i = 1; i <= total; i++){ doc.setPage(i); doc.setDrawColor(...LINE); doc.line(M, 285, W - M, 285); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...MUTED);
+    doc.text(`Bright Mesh  |  Generated ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`, M, 290); doc.text(`Page ${i} of ${total}`, W - M, 290, { align: 'right' }); }
+  return doc;
+}
+
+/* ----- Cash book: how cash moves, day by day ----- */
+let cbRangeKey = 'last30', cbLast = null;
+function cashDay(d){
+  const num = v => parseFloat(v) || 0;
+  let inShifts = 0, shiftCount = 0, autoUsed = 0, open = 0, tillPurch = 0;
+  allShifts.forEach(sh => {
+    if(sh.date !== d) return;
+    if(sh.status !== 'closed'){ open++; return; }
+    const fl = num(sh.openingFloat);
+    if(sh.closedBy === 'auto' && !sh.reopenedByCashier){ inShifts += num(sh.cashExpected) - fl; autoUsed++; } else inShifts += num(sh.counted) - fl;
+    shiftCount++; tillPurch += num(sh.purchasesPaid);
+  });
+  const supplier = supplierPayments.filter(x => x.date === d && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
+  let cashPurch = 0; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => { if(pu.date === d && (pu.payment || '').toLowerCase() === 'cash') cashPurch += num(pu.total); }));
+  const other = otherPayments.filter(x => x.date === d && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
+  const cl = weeklyClosures.find(c => c.date === d);
+  return { inShifts, shiftCount, autoUsed, open, supplier, purchases: cashPurch - tillPurch, other, out: cl ? num(cl.out) : 0, count: cl ? num(cl.cash) : null };
+}
+function cashBook(from, to){
+  const opening = cashAtHand(orAddDays(from, -1)).total; let bal = opening;
+  const rows = []; let tIn = 0, tOut = 0, tAdj = 0, nCounts = 0;
+  for(let i = 0, n = orDays(from, to); i < n; i++){
+    const d = orAddDays(from, i), f = cashDay(d), outs = f.supplier + f.purchases + f.other + f.out, before = bal;
+    const calc = bal + f.inShifts - outs; let adj = 0, closing = calc;
+    if(f.count !== null){ adj = f.count - calc; closing = f.count; nCounts++; }
+    rows.push({ date: d, opening: before, ...f, outs, adj, closing, active: !!(f.inShifts || f.supplier || f.purchases || f.other || f.out || f.count !== null || f.open) });
+    bal = closing; tIn += f.inShifts; tOut += outs; tAdj += adj;
+  }
+  return { from, to, opening, closing: bal, tIn, tOut, tAdj, nCounts, rows };
+}
+function cbMarkChips(){ document.querySelectorAll('#cbChips .er-chip').forEach(c => c.classList.toggle('active', c.dataset.k === cbRangeKey)); }
+function cbInit(){
+  const f = document.getElementById('cbFrom'); if(!f) return;
+  if(!f.value){ const [a, b] = orRangeFor(cbRangeKey === 'custom' ? 'last30' : cbRangeKey); f.value = a; document.getElementById('cbTo').value = b; }
+  cbMarkChips(); renderCashBook();
+}
+function cbSetRange(k){ const [a, b] = orRangeFor(k); document.getElementById('cbFrom').value = a; document.getElementById('cbTo').value = b; cbRangeKey = k; cbMarkChips(); renderCashBook(); }
+function cbCustom(){ cbRangeKey = 'custom'; cbMarkChips(); renderCashBook(); }
+function cbChart(rows){
+  if(rows.length < 2) return '';
+  const vals = rows.map(r => r.closing), mn = Math.min(...vals, 0), mx = Math.max(...vals, 1), W = 640, H = 120, pad = 8;
+  const x = i => pad + i * (W - 2 * pad) / (rows.length - 1), y = v => H - pad - (v - mn) / ((mx - mn) || 1) * (H - 2 * pad);
+  const pts = rows.map((r, i) => `${x(i).toFixed(1)},${y(r.closing).toFixed(1)}`).join(' ');
+  const counts = rows.map((r, i) => r.count !== null ? `<circle cx="${x(i).toFixed(1)}" cy="${y(r.closing).toFixed(1)}" r="3.5" fill="#f5a623" stroke="#fff" stroke-width="1.2"><title>Counted ${fmt(r.count)}</title></circle>` : '').join('');
+  return `<div class="table-card" style="padding:1rem 1.2rem;margin-bottom:1rem;"><div style="font-size:0.8rem;font-weight:700;color:#0b2b44;margin-bottom:0.3rem;">Cash at hand through the period <span style="font-weight:500;color:#7b8fa0;">(orange dots are the days cash was counted)</span></div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:150px;"><polygon points="${pad},${H - pad} ${pts} ${W - pad},${H - pad}" fill="#e6f4ec"/><polyline points="${pts}" fill="none" stroke="#1d7a4b" stroke-width="2.2" stroke-linejoin="round"/>${counts}</svg>
+    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#7b8fa0;"><span>${rows[0].date}</span><span>Lowest ${fmt(Math.min(...vals))} · Highest ${fmt(Math.max(...vals))}</span><span>${rows[rows.length - 1].date}</span></div></div>`;
+}
+function renderCashBook(){
+  const box = document.getElementById('cbPreview'); if(!box) return;
+  if(!hasPerm('viewAudit')){ box.innerHTML = ''; return; }
+  let from = document.getElementById('cbFrom').value, to = document.getElementById('cbTo').value; if(!from || !to){ box.innerHTML = ''; return; }
+  if(from > to){ const t = from; from = to; to = t; document.getElementById('cbFrom').value = from; document.getElementById('cbTo').value = to; }
+  const r = cbLast = cashBook(from, to), today = _ymd(new Date()), now = cashAtHand(today);
+  const pd = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+  const z = v => Math.abs(v) < 0.5 ? '<span style="color:#b6c3cf;">—</span>' : fmt(v);
+  let h = `<div class="summary-grid">
+    <div class="sum-card"><div class="sum-label">Cash at start</div><div class="sum-value">${fmt(r.opening)}</div><div class="sum-sub">before ${from}</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-arrow-down"></i> Cash in from shifts</div><div class="sum-value" style="color:#1d7a4b;">${fmt(r.tIn)}</div></div>
+    <div class="sum-card"><div class="sum-label"><i class="fas fa-arrow-up"></i> Cash paid out</div><div class="sum-value" style="color:#b33a3a;">${fmt(r.tOut)}</div></div>
+    <div class="sum-card ${Math.abs(r.tAdj) > 0.5 ? 'flag-amber' : ''}"><div class="sum-label"><i class="fas fa-scale-balanced"></i> Found at counts</div><div class="sum-value">${fmtSigned(r.tAdj)}</div><div class="sum-sub">${r.nCounts} count(s): difference between the book and the cash counted</div></div>
+    <div class="sum-card flag-green"><div class="sum-label"><i class="fas fa-wallet"></i> Cash at hand ${to === today ? 'today' : 'on ' + to}</div><div class="sum-value">${fmt(r.closing)}</div>${to !== today ? `<div class="sum-sub">Today: ${fmt(now.total)}</div>` : ''}</div></div>`;
+  h += '<div style="height:1rem"></div>' + cbChart(r.rows);
+  const act = r.rows.filter(x => x.active);
+  h += '<div class="table-card"><div class="table-scroll"><table><thead><tr><th>Date</th><th style="text-align:right;">Opening</th><th style="text-align:right;">From shifts</th><th style="text-align:right;">Supplier payments</th><th style="text-align:right;">Cash purchases</th><th style="text-align:right;">Other payments</th><th style="text-align:right;">Banked / taken out</th><th style="text-align:right;">Count difference</th><th style="text-align:right;">Closing</th></tr></thead><tbody>' +
+    (act.length ? act.map(x => `<tr${x.count !== null ? ' style="background:#fff9ec;"' : ''}><td>${pd(x.date)}${x.open ? ' <span class="badge-pill amber" title="A shift is still open that day and is not counted yet">open shift</span>' : ''}${x.autoUsed ? ' <span class="badge-pill" title="Closed by the system, so expected cash is used">auto-closed</span>' : ''}</td><td style="text-align:right;">${fmt(x.opening)}</td><td style="text-align:right;color:#1d7a4b;">${z(x.inShifts)}</td><td style="text-align:right;">${z(x.supplier)}</td><td style="text-align:right;">${z(x.purchases)}</td><td style="text-align:right;">${z(x.other)}</td><td style="text-align:right;">${z(x.out)}</td><td style="text-align:right;${x.count !== null && Math.abs(x.adj) > 0.5 ? 'color:#b33a3a;font-weight:600;' : ''}">${x.count !== null ? (Math.abs(x.adj) < 0.5 ? 'Counted, matches' : fmtSigned(x.adj)) : '<span style="color:#b6c3cf;">—</span>'}</td><td style="text-align:right;font-weight:700;">${fmt(x.closing)}${x.count !== null ? ' <span title="Cash counted" style="color:#f5a623;">&#9679;</span>' : ''}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#7b8fa0;">Nothing was recorded on any day in this range.</td></tr>') +
+    '</tbody></table></div></div>';
+  h += '<div style="font-size:0.75rem;color:#7b8fa0;margin-top:0.8rem;line-height:1.5;"><b>How it works.</b> Cash from shifts is the cash counted at the end of each closed shift, less the opening float, so till expenses and purchases paid from the till are already taken off. Payments are the cash ones only; mobile money and bank payments do not change cash at hand. On a day when Daily Balancing cash was counted, the book is reset to the counted figure and the gap is shown as the count difference. A count is taken to include everything on its own date. Open shifts are not included until they are closed.</div>';
+  box.innerHTML = h;
+}
+function cbDownloadExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('Excel library not loaded', 'error'); return; }
+  renderCashBook(); const r = cbLast; if(!r) return;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.rows.map(x => ({ Date: x.date, Opening: Math.round(x.opening), 'Cash from shifts': Math.round(x.inShifts), 'Supplier payments (cash)': Math.round(x.supplier), 'Cash purchases': Math.round(x.purchases), 'Other payments (cash)': Math.round(x.other), 'Banked / taken out': Math.round(x.out), 'Cash counted': x.count === null ? '' : Math.round(x.count), 'Count difference': x.count === null ? '' : Math.round(x.adj), Closing: Math.round(x.closing) }))), 'Cash book');
+  XLSX.writeFile(wb, `Cash_Book_${r.from}_to_${r.to}.xlsx`);
+}
+
 /* TEAM */
 function renderTeam(){
   const role = document.getElementById('teamUserRole')?.value || 'manager';
@@ -4454,6 +4785,9 @@ function switchTab(tab){
   if(tab === 'shifts') renderShifts();
   if(tab === 'expenses') renderExpensesReport();
   if(tab === 'owner') orInit();
+  if(tab === 'payments') prInit();
+  if(tab === 'cashbook') cbInit();
+  if(tab === 'audit'){ try { renderCashAtHand(); } catch(e) { console.warn(e); } }
   if(tab === 'daily'){ renderTable(); renderSummary(); renderTotals(); }
   if(tab === 'team') renderTeam();
 }
@@ -4853,6 +5187,7 @@ function computeAuditFlags(){
   });
 }
 function renderAudit(){
+  try { renderCashAtHand(); } catch(e) { console.warn('Cash at hand failed', e); }
   try { renderTodayChecks(); } catch(e) { console.warn('Today checks failed', e); }
   const monthIsClosed = !!(allMonthsData[currentMonthKey] && allMonthsData[currentMonthKey].closed);
   weeklyClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -5004,7 +5339,7 @@ async function renderHistory(){
         </div>
         <div class="actions">
           <button class="btn" onclick="viewHistoryMonth('${h.monthKey}')"><i class="fas fa-eye"></i> Open</button>
-          <button class="btn" onclick="runHistoryAudit('${h.monthKey}')"><i class="fas fa-magnifying-glass-chart"></i> Audit</button>
+          <button class="btn" onclick="runHistoryAudit('${h.monthKey}')"><i class="fas fa-search-dollar"></i> Audit</button>
           ${hasPerm('manageUsers') ? `<button class="btn btn-primary" onclick="reopenMonth('${h.monthKey}')"><i class="fas fa-lock-open"></i> Re-open</button>` : ''}
           ${canDelete ? `<button class="btn btn-danger" onclick="deleteMonthHistory('${h.monthKey}')"><i class="fas fa-trash"></i> Delete</button>` : ''}
         </div>
@@ -5271,7 +5606,7 @@ function runAuditWithRange(opts){
           <div class="why"><strong>Why:</strong> the cash counted on the daily balancing sheet should match what the cashiers counted at end of shift. Any difference means either the balancing cash figure or the shift figures are wrong.</div>
         </div>
         <div class="formula-block">
-          <div class="formula-title"><i class="fas fa-shield-halved"></i> 6. Data-Entry Sanity Checks</div>
+          <div class="formula-title"><i class="fas fa-shield-alt"></i> 6. Data-Entry Sanity Checks</div>
           <div><code>Stock Cost = 0 · Stock Price &lt; Stock Cost · Negative Credit · Negative Cash</code></div>
           <div class="why"><strong>Why:</strong> these are impossible or implausible values that distort every downstream figure. They must be corrected before trusting any of the above calculations.</div>
         </div>
