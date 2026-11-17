@@ -4335,26 +4335,42 @@ function orBuildPdf(r){
 /* ===================== CASH AT HAND + PAYMENTS REPORT ===================== */
 let otherPayments = [], cashAsOf = '', prRangeKey = 'month', prLast = null;
 const OTHER_PAY_TYPES = ['Salary', 'Rent', 'Utilities', 'Transport', 'Owner withdrawal', 'Banked', 'Other'];
+/* When was the cash counted? Newer records store the time. Older ones are matched to the log entry made when they were saved. */
+function countTimeFor(c){
+  if(!c) return null;
+  if(c.countedAt) return c.countedAt;
+  const hit = auditLog.find(l => l.action === 'Add Closure' && String(l.details || '').startsWith(c.date));
+  return hit ? hit.time : null;
+}
+/* Does something recorded at `ts` on `dateStr` come after the count (date A, time ct)? Later days always do; the count day only if it was recorded after the count. */
+function afterCount(dateStr, ts, A, ct){
+  if(!dateStr) return false;
+  if(dateStr > A) return true;
+  if(dateStr < A || !ct || !ts) return false;
+  return new Date(ts) > new Date(ct);
+}
 function cashAtHand(asOf){
   const num = v => parseFloat(v) || 0;
   const anchor = weeklyClosures.filter(c => c.date && c.date <= asOf).sort((a, b) => a.date.localeCompare(b.date)).pop() || null;
-  const A = anchor ? anchor.date : '';
-  const inR = d => d && d > A && d <= asOf;
+  const A = anchor ? anchor.date : '', ct = anchor ? countTimeFor(anchor) : null;
+  const noAnchorOk = !anchor;
+  const inR = (d, ts) => d && d <= asOf && (noAnchorOk ? true : afterCount(d, ts, A, ct));
   let shiftCash = 0, shiftCount = 0, autoUsed = 0, openCount = 0, tillPurch = 0;
   allShifts.forEach(sh => {
-    if(!inR(sh.date)) return;
-    if(sh.status !== 'closed'){ openCount++; return; }
+    if(!sh.date || sh.date > asOf) return;
+    if(sh.status !== 'closed'){ if(!anchor || sh.date >= A) openCount++; return; }
+    if(!inR(sh.date, sh.closedAt)) return;
     const fl = num(sh.openingFloat);
     if(sh.closedBy === 'auto' && !sh.reopenedByCashier){ shiftCash += num(sh.cashExpected) - fl; autoUsed++; } else shiftCash += num(sh.counted) - fl;
     shiftCount++; tillPurch += num(sh.purchasesPaid);
   });
-  const supplierCash = supplierPayments.filter(x => inR(x.date) && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
-  let cashPurchAll = 0; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => { if(inR(pu.date) && (pu.payment || '').toLowerCase() === 'cash') cashPurchAll += num(pu.total); }));
+  const supplierCash = supplierPayments.filter(x => inR(x.date, x.at) && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
+  let cashPurchAll = 0; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => { if(inR(pu.date, pu.createdAt) && (pu.payment || '').toLowerCase() === 'cash') cashPurchAll += num(pu.total); }));
   const cashPurch = cashPurchAll - tillPurch;   // purchases paid from the till are already inside the shift cash counts
-  const otherCash = otherPayments.filter(x => inR(x.date) && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
+  const otherCash = otherPayments.filter(x => inR(x.date, x.at) && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
   const base = anchor ? num(anchor.cash) : 0;
   const staleDays = anchor ? Math.round((new Date(asOf + 'T00:00:00') - new Date(A + 'T00:00:00')) / 86400000) : null;
-  return { asOf, anchor, A, base, shiftCash, shiftCount, autoUsed, openCount, supplierCash, cashPurch, tillPurch, otherCash, total: base + shiftCash - supplierCash - cashPurch - otherCash, staleDays };
+  return { asOf, anchor, A, ct, base, shiftCash, shiftCount, autoUsed, openCount, supplierCash, cashPurch, tillPurch, otherCash, total: base + shiftCash - supplierCash - cashPurch - otherCash, staleDays };
 }
 function setCashAsOf(v){ cashAsOf = v || ''; renderCashAtHand(); }
 function renderCashAtHand(){
@@ -4362,6 +4378,7 @@ function renderCashAtHand(){
   if(!hasPerm('viewAudit')){ box.innerHTML = ''; return; }
   const today = _ymd(new Date()), asOf = cashAsOf || today, c = cashAtHand(asOf);
   const pd = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const tm = ts => new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const row = (sign, label, v, sub) => `<tr><td>${sign} ${label}${sub ? ` <span style="opacity:0.6;font-size:0.72rem;">${sub}</span>` : ''}</td><td>${sign === '&minus;' && v ? '&minus; ' : ''}${fmt(v)}</td></tr>`;
   const notes = [];
   if(!c.anchor) notes.push('No Daily Balancing cash count found, so this is only the cash movement recorded so far. Add a Daily Balancing record to anchor it.');
@@ -4371,14 +4388,15 @@ function renderCashAtHand(){
   box.innerHTML = `<div class="cah">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.8rem;">
       <div><div class="lbl">Cash at hand ${asOf === today ? 'today' : 'on ' + pd(asOf)}</div><div class="big">UGX ${fmt(c.total)}</div>
-      <div style="font-size:0.78rem;opacity:0.8;">${c.anchor ? (c.A === asOf ? `Cash was counted on this date. Shifts and payments recorded after it are added here.` : `Cash counted on ${pd(c.A)}, plus everything recorded after it`) : 'Cash movement recorded so far'}</div></div>
+      <div style="font-size:0.78rem;opacity:0.8;">${c.anchor ? (c.ct ? `Cash counted on ${pd(c.A)} at ${tm(c.ct)}, plus everything recorded after that time` : `Cash counted on ${pd(c.A)}. The time of the count is not recorded, so payments that day are assumed to be inside it. <a style="color:#7fe0a8;font-weight:700;cursor:pointer;text-decoration:underline;" onclick="setCountTime('${c.A}')">Set the time</a>`) : 'Cash movement recorded so far'}</div>
+      <div style="font-size:0.68rem;opacity:0.6;margin-top:0.2rem;">Updated ${liveUpdatedAt ? liveUpdatedAt.toLocaleTimeString('en-GB') : new Date().toLocaleTimeString('en-GB')} <a style="color:#7fe0a8;cursor:pointer;text-decoration:underline;" onclick="refreshLiveCash(true)">Refresh now</a></div></div>
       <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;"><label style="font-size:0.72rem;opacity:0.8;">As of</label><input type="date" value="${asOf}" max="${today}" onchange="setCashAsOf(this.value)">
         ${asOf !== today ? `<button class="btn" style="padding:0.35rem 0.7rem;" onclick="setCashAsOf('')">Today</button>` : ''}
         <button class="btn" style="padding:0.35rem 0.7rem;" onclick="switchTab('cashbook')"><i class="fas fa-book"></i> Cash book</button>
         <button class="btn" style="padding:0.35rem 0.7rem;" onclick="switchTab('payments')"><i class="fas fa-list"></i> Payments</button></div>
     </div>
     <table><tbody>
-      ${row('', 'Cash counted at last balancing', c.base, c.anchor ? pd(c.A) : '')}
+      ${row('', 'Cash counted at last balancing', c.base, c.anchor ? pd(c.A) + (c.ct ? ', ' + tm(c.ct) : '') : '')}
       ${row('+', 'Cash collected in shifts', c.shiftCash, c.shiftCount + ' shift(s), after till expenses and purchases')}
       ${row('&minus;', 'Supplier payments in cash', c.supplierCash)}
       ${row('&minus;', 'Purchases paid in cash', c.cashPurch, c.tillPurch ? 'not counting UGX ' + fmt(c.tillPurch) + ' paid from the till' : '')}
@@ -4520,31 +4538,101 @@ function prBuildPdf(r){
   return doc;
 }
 
+async function setCountTime(dateStr){
+  if(!hasPerm('manageUsers') && !hasPerm('manageDailyBalancing')){ showToast('You do not have permission to change balancing records', 'error'); return; }
+  const rec = weeklyClosures.find(w => w.date === dateStr); if(!rec) return;
+  const nowHM = String(new Date().getHours()).padStart(2, '0') + ':' + String(new Date().getMinutes()).padStart(2, '0');
+  const v = await askForm({ title: 'Time of the cash count', icon: 'fa-clock', subtitle: dateStr, submitLabel: 'Save time',
+    note: 'Payments, purchases and shifts recorded after this time on the same day will be taken off or added to cash at hand. Anything recorded before it is assumed to be inside the count.',
+    fields: [{ name: 'time', label: 'Time the cash was counted', type: 'time', value: nowHM, required: true }] });
+  if(!v) return;
+  const iso = new Date(dateStr + 'T' + v.time + ':00').toISOString();
+  rec.countedAt = iso; await saveClosureToFirestore(rec);
+  addLog('Set Count Time', `${dateStr} count time set to ${v.time}`);
+  try { renderCashAtHand(); } catch(e) {} try { renderCashBook(); } catch(e) {}
+  showToast('Count time saved', 'success');
+}
+/* ----- live data: pull in what other devices have recorded ----- */
+let liveUpdatedAt = null, liveBusy = false;
+async function refreshLiveCash(manual){
+  if(liveBusy || !firebaseReady || !currentLocationId || !currentUser) return;
+  liveBusy = true;
+  try {
+    const ref = db.collection('locations').doc(currentLocationId);
+    const [shSnap, spSnap, opSnap, wSnap] = await Promise.all([ref.collection('shifts').orderBy('date', 'desc').limit(500).get(), ref.collection('supplierPayments').get(), ref.collection('otherPayments').get(), ref.collection('weeklyClosures').get()]);
+    // shifts: update in place, so a shift being edited on this screen keeps working
+    shSnap.forEach(doc => {
+      const fresh = { id: doc.id, ...doc.data() }, local = allShifts.find(x => x.id === doc.id);
+      if(!local) allShifts.push(fresh);
+      else if(!(currentShiftId === doc.id && local.status === 'open')) Object.assign(local, fresh);
+    });
+    sortAllShifts();
+    // lists: server records replace local copies; things not yet saved stay; things deleted elsewhere (seen before, now gone) go
+    const kn = (refreshLiveCash._known = refreshLiveCash._known || { sp: new Set(), op: new Set(), cl: new Set() });
+    const merge = (local, snap, keyOf, known, build) => {
+      const fresh = []; snap.forEach(doc => fresh.push(build(doc))); const fm = new Map(fresh.map(x => [keyOf(x), x])), out = [];
+      local.forEach(l => { const k = keyOf(l); if(fm.has(k)){ out.push(fm.get(k)); fm.delete(k); } else if(!known.has(k)) out.push(l); });
+      fm.forEach(x => out.push(x)); known.clear(); fresh.forEach(x => known.add(keyOf(x))); return out;
+    };
+    supplierPayments = merge(supplierPayments, spSnap, x => x.id, kn.sp, doc => ({ id: doc.id, ...doc.data() }));
+    otherPayments = merge(otherPayments, opSnap, x => x.id, kn.op, doc => ({ id: doc.id, ...doc.data() }));
+    weeklyClosures = merge(weeklyClosures, wSnap, x => x.date, kn.cl, doc => doc.data()).sort((a, b) => new Date(a.date) - new Date(b.date));
+    // purchases: this month and last month, never touching rows being edited here
+    const now = new Date(), nowKey = _ymd(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0, 7);
+    const mks = [...new Set([nowKey, currentMonthKey, shiftMonthKey(currentMonthKey, 1)].filter(Boolean))];
+    for(const mk of mks){
+      const m = allMonthsData[mk]; if(!m) continue;
+      const snap = await ref.collection('purchases').where('month', '==', mk).get();
+      const store = (_rowSnap.purchases[mk] = _rowSnap.purchases[mk] || {}), seen = new Set(), rows = Array.isArray(m.purchases) ? m.purchases : (m.purchases = []);
+      snap.forEach(doc => {
+        const raw = { ...doc.data(), id: doc.id }; seen.add(doc.id);
+        const local = rows.find(r => r.id === doc.id);
+        const clean = o => { const c = JSON.parse(JSON.stringify(o)); delete c.month; return JSON.stringify(c); };
+        if(!local){ const row = { ...raw }; delete row.month; rows.push(row); store[doc.id] = JSON.parse(JSON.stringify(raw)); }
+        else { const stored = store[doc.id]; if(stored && clean(local) === clean(stored)){ const row = { ...raw }; delete row.month; Object.keys(local).forEach(k => delete local[k]); Object.assign(local, row); store[doc.id] = JSON.parse(JSON.stringify(raw)); } }
+      });
+      for(let i = rows.length - 1; i >= 0; i--){ const r = rows[i]; if(r.id && store[r.id] && !seen.has(r.id)){ const c = JSON.parse(JSON.stringify(r)); delete c.month; const st = JSON.parse(JSON.stringify(store[r.id])); delete st.month; if(JSON.stringify(c) === JSON.stringify(st)){ rows.splice(i, 1); delete store[r.id]; } } }
+      sortRowsByDate(rows);
+    }
+    liveUpdatedAt = new Date();
+    try { renderCashAtHand(); } catch(e) {} try { if(activeTab === 'cashbook') renderCashBook(); } catch(e) {}
+    if(manual) showToast('Cash figures refreshed', 'success');
+  } catch(e) { console.warn('Live refresh failed', e); if(manual) showToast('Could not refresh: ' + e.message, 'error'); }
+  finally { liveBusy = false; }
+}
+setInterval(() => { if(document.hidden) return; if(activeTab === 'audit' || activeTab === 'cashbook') refreshLiveCash(false); }, 60000);
+
 /* ----- Cash book: how cash moves, day by day ----- */
 let cbRangeKey = 'last30', cbLast = null;
 function cashDay(d){
   const num = v => parseFloat(v) || 0;
-  let inShifts = 0, shiftCount = 0, autoUsed = 0, open = 0, tillPurch = 0;
+  const cl = weeklyClosures.find(c => c.date === d), ct = cl ? countTimeFor(cl) : null;
+  const post = ts => !!(ct && ts && new Date(ts) > new Date(ct));   // recorded after the count that day
+  const z = () => ({ inShifts: 0, supplier: 0, purchases: 0, other: 0 }), pre = z(), aft = z();
+  let shiftCount = 0, autoUsed = 0, open = 0;
+  const tillPre = { v: 0 }, tillAft = { v: 0 };
   allShifts.forEach(sh => {
     if(sh.date !== d) return;
     if(sh.status !== 'closed'){ open++; return; }
-    const fl = num(sh.openingFloat);
-    if(sh.closedBy === 'auto' && !sh.reopenedByCashier){ inShifts += num(sh.cashExpected) - fl; autoUsed++; } else inShifts += num(sh.counted) - fl;
-    shiftCount++; tillPurch += num(sh.purchasesPaid);
+    const t = post(sh.closedAt) ? aft : pre, tp = t === aft ? tillAft : tillPre, fl = num(sh.openingFloat);
+    if(sh.closedBy === 'auto' && !sh.reopenedByCashier){ t.inShifts += num(sh.cashExpected) - fl; autoUsed++; } else t.inShifts += num(sh.counted) - fl;
+    shiftCount++; tp.v += num(sh.purchasesPaid);
   });
-  const supplier = supplierPayments.filter(x => x.date === d && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
-  let cashPurch = 0; Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => { if(pu.date === d && (pu.payment || '').toLowerCase() === 'cash') cashPurch += num(pu.total); }));
-  const other = otherPayments.filter(x => x.date === d && (x.mode || 'Cash') === 'Cash').reduce((a, x) => a + num(x.amount), 0);
-  const cl = weeklyClosures.find(c => c.date === d);
-  return { inShifts, shiftCount, autoUsed, open, supplier, purchases: cashPurch - tillPurch, other, out: cl ? num(cl.out) : 0, count: cl ? num(cl.cash) : null };
+  supplierPayments.forEach(x => { if(x.date === d && (x.mode || 'Cash') === 'Cash') (post(x.at) ? aft : pre).supplier += num(x.amount); });
+  Object.keys(allMonthsData).forEach(mk => (allMonthsData[mk].purchases || []).forEach(pu => { if(pu.date === d && (pu.payment || '').toLowerCase() === 'cash') (post(pu.createdAt) ? aft : pre).purchases += num(pu.total); }));
+  otherPayments.forEach(x => { if(x.date === d && (x.mode || 'Cash') === 'Cash') (post(x.at) ? aft : pre).other += num(x.amount); });
+  pre.purchases -= tillPre.v; aft.purchases -= tillAft.v;
+  const outsPre = pre.supplier + pre.purchases + pre.other + (cl ? num(cl.out) : 0), outsAft = aft.supplier + aft.purchases + aft.other;
+  return { inShifts: pre.inShifts + aft.inShifts, shiftCount, autoUsed, open, supplier: pre.supplier + aft.supplier, purchases: pre.purchases + aft.purchases, other: pre.other + aft.other, out: cl ? num(cl.out) : 0,
+    count: cl ? num(cl.cash) : null, countTime: ct, preIn: pre.inShifts, postIn: aft.inShifts, preOuts: outsPre, postOuts: outsAft };
 }
 function cashBook(from, to){
   const opening = cashAtHand(orAddDays(from, -1)).total; let bal = opening;
   const rows = []; let tIn = 0, tOut = 0, tAdj = 0, nCounts = 0;
   for(let i = 0, n = orDays(from, to); i < n; i++){
     const d = orAddDays(from, i), f = cashDay(d), outs = f.supplier + f.purchases + f.other + f.out, before = bal;
-    const calc = bal + f.inShifts - outs; let adj = 0, closing = calc;
-    if(f.count !== null){ adj = f.count - calc; closing = f.count; nCounts++; }
+    const calc = bal + f.preIn - f.preOuts; let adj = 0, closing = bal + f.inShifts - outs;
+    if(f.count !== null){ adj = f.count - calc; closing = f.count + f.postIn - f.postOuts; nCounts++; }
     rows.push({ date: d, opening: before, ...f, outs, adj, closing, active: !!(f.inShifts || f.supplier || f.purchases || f.other || f.out || f.count !== null || f.open) });
     bal = closing; tIn += f.inShifts; tOut += outs; tAdj += adj;
   }
@@ -4585,7 +4673,7 @@ function renderCashBook(){
   h += '<div style="height:1rem"></div>' + cbChart(r.rows);
   const act = r.rows.filter(x => x.active);
   h += '<div class="table-card"><div class="table-scroll"><table><thead><tr><th>Date</th><th style="text-align:right;">Opening</th><th style="text-align:right;">From shifts</th><th style="text-align:right;">Supplier payments</th><th style="text-align:right;">Cash purchases</th><th style="text-align:right;">Other payments</th><th style="text-align:right;">Banked / taken out</th><th style="text-align:right;">Count difference</th><th style="text-align:right;">Closing</th></tr></thead><tbody>' +
-    (act.length ? act.map(x => `<tr${x.count !== null ? ' style="background:#fff9ec;"' : ''}><td>${pd(x.date)}${x.open ? ' <span class="badge-pill amber" title="A shift is still open that day and is not counted yet">open shift</span>' : ''}${x.autoUsed ? ' <span class="badge-pill" title="Closed by the system, so expected cash is used">auto-closed</span>' : ''}</td><td style="text-align:right;">${fmt(x.opening)}</td><td style="text-align:right;color:#1d7a4b;">${z(x.inShifts)}</td><td style="text-align:right;">${z(x.supplier)}</td><td style="text-align:right;">${z(x.purchases)}</td><td style="text-align:right;">${z(x.other)}</td><td style="text-align:right;">${z(x.out)}</td><td style="text-align:right;${x.count !== null && Math.abs(x.adj) > 0.5 ? 'color:#b33a3a;font-weight:600;' : ''}">${x.count !== null ? (Math.abs(x.adj) < 0.5 ? 'Counted, matches' : fmtSigned(x.adj)) : '<span style="color:#b6c3cf;">—</span>'}</td><td style="text-align:right;font-weight:700;">${fmt(x.closing)}${x.count !== null ? ' <span title="Cash counted" style="color:#f5a623;">&#9679;</span>' : ''}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#7b8fa0;">Nothing was recorded on any day in this range.</td></tr>') +
+    (act.length ? act.map(x => `<tr${x.count !== null ? ' style="background:#fff9ec;"' : ''}><td>${pd(x.date)}${x.open ? ' <span class="badge-pill amber" title="A shift is still open that day and is not counted yet">open shift</span>' : ''}${x.autoUsed ? ' <span class="badge-pill" title="Closed by the system, so expected cash is used">auto-closed</span>' : ''}</td><td style="text-align:right;">${fmt(x.opening)}</td><td style="text-align:right;color:#1d7a4b;">${z(x.inShifts)}</td><td style="text-align:right;">${z(x.supplier)}</td><td style="text-align:right;">${z(x.purchases)}</td><td style="text-align:right;">${z(x.other)}</td><td style="text-align:right;">${z(x.out)}</td><td style="text-align:right;${x.count !== null && Math.abs(x.adj) > 0.5 ? 'color:#b33a3a;font-weight:600;' : ''}">${x.count !== null ? (Math.abs(x.adj) < 0.5 ? 'Counted, matches' : fmtSigned(x.adj)) : '<span style="color:#b6c3cf;">—</span>'}</td><td style="text-align:right;font-weight:700;">${fmt(x.closing)}${x.count !== null ? ' <span title="Cash counted' + (x.countTime ? ' at ' + new Date(x.countTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '') + '" style="color:#f5a623;">&#9679;</span>' : ''}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#7b8fa0;">Nothing was recorded on any day in this range.</td></tr>') +
     '</tbody></table></div></div>';
   h += '<div style="font-size:0.75rem;color:#7b8fa0;margin-top:0.8rem;line-height:1.5;"><b>How it works.</b> Cash from shifts is the cash counted at the end of each closed shift, less the opening float, so till expenses and purchases paid from the till are already taken off. Payments are the cash ones only; mobile money and bank payments do not change cash at hand. On a day when Daily Balancing cash was counted, the book is reset to the counted figure and the gap is shown as the count difference. A count is taken to include everything on its own date. Open shifts are not included until they are closed.</div>';
   box.innerHTML = h;
@@ -4787,6 +4875,7 @@ function switchTab(tab){
   if(tab === 'owner') orInit();
   if(tab === 'payments') prInit();
   if(tab === 'cashbook') cbInit();
+  if(tab === 'audit' || tab === 'cashbook') refreshLiveCash(false);
   if(tab === 'audit'){ try { renderCashAtHand(); } catch(e) { console.warn(e); } }
   if(tab === 'daily'){ renderTable(); renderSummary(); renderTotals(); }
   if(tab === 'team') renderTeam();
@@ -5251,7 +5340,9 @@ async function editDailyBalancing(dateStr){
   rec.stock = rec.stockCost;
   rec.credit = parseFloat(bv.credit) || 0;
   rec.ledgerCredit = ledgerNow; rec.creditSource = rec.credit === ledgerNow ? 'ledger' : 'manual';
-  rec.cash = parseFloat(bv.cash) || 0;
+  const newCash = parseFloat(bv.cash) || 0;
+  if(newCash !== (parseFloat(rec.cash) || 0)) rec.countedAt = new Date().toISOString();   // a new cash figure is a new count
+  rec.cash = newCash;
   rec.editedAt = new Date().toISOString();
   rec.editedBy = currentUser.username;
   try {
@@ -5286,7 +5377,7 @@ async function addClosureEntry(){
   if(!date){ showToast('Please enter a date', 'error'); return; }
   if(isBalancingMonthClosed(date)){ showToast('Month is closed — balancing records for ' + monthLabel(date.slice(0,7)) + ' are locked', 'error'); return; }
   const ledgerCredit = Math.round(ledgerTotalOwed(date));
-  const closure = {date, stockCost, stockPrice, stock: stockCost, credit, ledgerCredit, creditSource: credit === ledgerCredit ? 'ledger' : 'manual', cash, out: parseFloat(document.getElementById('newClosureOut').value)||0, src: document.getElementById('newClosureSrc').value};
+  const closure = {date, stockCost, stockPrice, stock: stockCost, credit, ledgerCredit, creditSource: credit === ledgerCredit ? 'ledger' : 'manual', cash, out: parseFloat(document.getElementById('newClosureOut').value)||0, src: document.getElementById('newClosureSrc').value, countedAt: new Date().toISOString()};
   const existing = weeklyClosures.find(w => w.date === date);
   if(existing) Object.assign(existing, closure); else weeklyClosures.push(closure);
   weeklyClosures.sort((a,b)=>new Date(a.date)-new Date(b.date));
